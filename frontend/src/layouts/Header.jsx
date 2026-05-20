@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { ShoppingBag, Search, User } from 'lucide-react';
+import { ShoppingBag, Search, User, Heart } from 'lucide-react';
 
-function Header({ activeCategory, setActiveCategory, cartItemCount, setIsCartOpen, isScrolled, currentUser, onLogout, onOpenAuth }) {
+function Header({ activeCategory, setActiveCategory, cartItemCount, setIsCartOpen, isScrolled, currentUser, onLogout, onOpenAuth, favoriteCount }) {
   return (
     <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container header-container">
@@ -39,6 +39,29 @@ function Header({ activeCategory, setActiveCategory, cartItemCount, setIsCartOpe
         <div className="header-actions">
           <button className="icon-btn" aria-label="Tìm kiếm">
             <Search size={18} />
+          </button>
+
+          <button 
+            className="icon-btn wishlist-icon-wrapper" 
+            onClick={() => {
+              // Click vào icon wishlist sẽ lọc xem các sản phẩm đã yêu thích
+              setActiveCategory(activeCategory === 'WISHLIST' ? 'ALL' : 'WISHLIST');
+              // Tự động cuộn xuống phần grid sản phẩm
+              const grid = document.getElementById('shop-grid');
+              if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+            }}
+            aria-label="Danh sách yêu thích"
+          >
+            <Heart size={18} fill={favoriteCount > 0 ? "#d1a852" : "none"} color={favoriteCount > 0 ? "#d1a852" : "currentColor"} />
+            {favoriteCount > 0 && (
+              <motion.span 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="wishlist-badge"
+              >
+                {favoriteCount}
+              </motion.span>
+            )}
           </button>
           
           {currentUser ? (

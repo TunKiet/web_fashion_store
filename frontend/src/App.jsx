@@ -76,6 +76,7 @@ const FALLBACK_PRODUCTS = [
 function App() {
   const [products, setProducts] = useState(FALLBACK_PRODUCTS);
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
   const [cart, setCart] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -84,6 +85,11 @@ function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Tự động reset về trang 1 khi lọc danh mục khác
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory]);
 
   // Khôi phục thông tin đăng nhập từ localStorage khi khởi động
   useEffect(() => {
@@ -145,6 +151,18 @@ function App() {
 
   // Thêm vào giỏ hàng
   const addToCart = (product, size = 'M') => {
+    // ==========================================
+    // CHÚ THÍCH KẾT NỐI BACKEND (AUTHENTICATION GATEWAY):
+    // Thay đổi điều kiện này khi bạn tích hợp JWT hoặc Session Authentication từ API Django.
+    // Ví dụ: if (!localStorage.getItem('token')) hoặc sử dụng Context State.
+    // ==========================================
+    if (!currentUser) {
+      alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.');
+      setIsAuthOpen(true);
+      return;
+    }
+    // ==========================================
+
     setCart(prevCart => {
       const existingItemIndex = prevCart.findIndex(
         item => item.id === product.id && item.selectedSize === size
@@ -186,6 +204,18 @@ function App() {
 
   // Đánh dấu sản phẩm yêu thích (Toggle Favorite)
   const toggleFavorite = (productId) => {
+    // ==========================================
+    // CHÚ THÍCH KẾT NỐI BACKEND (AUTHENTICATION GATEWAY):
+    // Thay thế logic này bằng một POST request gửi tới Backend Django API để lưu sản phẩm yêu thích.
+    // Ví dụ: axios.post('/api/wishlist/toggle/', { item_id: productId }, { headers: { Authorization: `Bearer ${token}` } })
+    // ==========================================
+    if (!currentUser) {
+      alert('Vui lòng đăng nhập để lưu sản phẩm yêu thích.');
+      setIsAuthOpen(true);
+      return;
+    }
+    // ==========================================
+
     setFavorites(prev => 
       prev.includes(productId) 
         ? prev.filter(id => id !== productId) 
@@ -199,6 +229,25 @@ function App() {
     setSelectedSize('M');
   };
 
+  // Điều hướng sản phẩm Trước / Sau trong Modal chi tiết
+  const handleNextProduct = () => {
+    if (!selectedProduct) return;
+    const currentIndex = filteredProducts.findIndex(p => p.id === selectedProduct.id);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + 1) % filteredProducts.length;
+    setSelectedProduct(filteredProducts[nextIndex]);
+    setSelectedSize('M'); // reset size khi đổi sản phẩm
+  };
+
+  const handlePrevProduct = () => {
+    if (!selectedProduct) return;
+    const currentIndex = filteredProducts.findIndex(p => p.id === selectedProduct.id);
+    if (currentIndex === -1) return;
+    const prevIndex = (currentIndex - 1 + filteredProducts.length) % filteredProducts.length;
+    setSelectedProduct(filteredProducts[prevIndex]);
+    setSelectedSize('M'); // reset size khi đổi sản phẩm
+  };
+
   // Các số liệu tính toán giỏ hàng
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
   const cartSubtotal = cart.reduce(
@@ -209,6 +258,8 @@ function App() {
   // Bộ lọc danh mục sản phẩm (Viết hoa để so khớp)
   const filteredProducts = activeCategory === 'ALL'
     ? products
+    : activeCategory === 'WISHLIST'
+    ? products.filter(p => favorites.includes(p.id))
     : products.filter(p => {
         const catUpper = p.category.toUpperCase();
         if (activeCategory === 'DRESSES') return catUpper === 'ĐẦM DẠ HỘI' || catUpper === 'DRESSES';
@@ -216,6 +267,13 @@ function App() {
         if (activeCategory === 'ACCESSORIES') return catUpper === 'PHỤ KIỆN' || catUpper === 'ACCESSORIES';
         return catUpper === activeCategory;
       });
+
+  // Logic phân trang
+  const ITEMS_PER_PAGE = 6;
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="App">
@@ -229,6 +287,7 @@ function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
         onOpenAuth={() => setIsAuthOpen(true)}
+        favoriteCount={favorites.length}
       />
 
       {/* HERO BANNER SECTION */}
@@ -238,8 +297,12 @@ function App() {
       <section className="shop-section" id="shop-grid">
         <div className="container">
           <div className="section-header">
-            <h2 className="section-title">Bộ Sưu Tập Độc Bản</h2>
-            <p className="section-subtitle">Thiết kế hoàn mỹ, may đo tinh xảo cho tủ đồ cao cấp của bạn</p>
+            <h2 className="section-title">
+              {activeCategory === 'WISHLIST' ? 'Danh Sách Yêu Thích' : 'Bộ Sưu Tập Độc Bản'}
+            </h2>
+            <p className="section-subtitle">
+              {activeCategory === 'WISHLIST' ? 'Những thiết kế thượng lưu được bạn đặc biệt lưu giữ' : 'Thiết kế hoàn mỹ, may đo tinh xảo cho tủ đồ cao cấp của bạn'}
+            </p>
           </div>
 
           <div className="filter-tabs">
@@ -284,20 +347,57 @@ function App() {
               <p>Hiện không có sản phẩm nào thuộc danh mục này.</p>
             </div>
           ) : (
-            <div className="products-grid">
-              <AnimatePresence mode="popLayout">
-                {filteredProducts.map(product => (
-                  <ProductCard 
-                    key={product.id}
-                    product={product}
-                    onOpenDetails={openProductDetails}
-                    onAddToCart={addToCart}
-                    isFavorite={favorites.includes(product.id)}
-                    onToggleFavorite={toggleFavorite}
-                  />
-                ))}
-              </AnimatePresence>
-            </div>
+            <>
+              <div className="products-grid">
+                <AnimatePresence mode="popLayout">
+                  {currentItems.map(product => (
+                    <ProductCard 
+                      key={product.id}
+                      product={product}
+                      onOpenDetails={openProductDetails}
+                      onAddToCart={addToCart}
+                      isFavorite={favorites.includes(product.id)}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* THANH PHÂN TRANG */}
+              {totalPages > 1 && (
+                <div className="pagination-container">
+                  <button 
+                    className="pagination-btn"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
+                    &lt;
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                    <button
+                      key={pageNum}
+                      className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+                      onClick={() => {
+                        setCurrentPage(pageNum);
+                        const grid = document.getElementById('shop-grid');
+                        if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+
+                  <button 
+                    className="pagination-btn"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                  >
+                    &gt;
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -332,6 +432,8 @@ function App() {
             }}
             selectedSize={selectedSize}
             setSelectedSize={setSelectedSize}
+            onNext={handleNextProduct}
+            onPrev={handlePrevProduct}
           />
         )}
       </AnimatePresence>
