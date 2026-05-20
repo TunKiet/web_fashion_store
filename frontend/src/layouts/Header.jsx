@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { ShoppingBag, Search, User } from 'lucide-react';
 
-function Header({ activeCategory, setActiveCategory, cartItemCount, setIsCartOpen, isScrolled }) {
+function Header({ activeCategory, setActiveCategory, cartItemCount, setIsCartOpen, isScrolled, currentUser, onLogout, onOpenAuth }) {
   return (
     <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container header-container">
@@ -40,9 +40,18 @@ function Header({ activeCategory, setActiveCategory, cartItemCount, setIsCartOpe
           <button className="icon-btn" aria-label="Tìm kiếm">
             <Search size={18} />
           </button>
-          <button className="icon-btn" aria-label="Tài khoản">
-            <User size={18} />
-          </button>
+          
+          {currentUser ? (
+            <div className="auth-user-welcome">
+              <span>{currentUser.name}</span>
+              <button className="auth-logout-btn" onClick={onLogout}>Thoát</button>
+            </div>
+          ) : (
+            <button className="icon-btn" onClick={onOpenAuth} aria-label="Tài khoản">
+              <User size={18} />
+            </button>
+          )}
+
           <button 
             className="icon-btn cart-icon-wrapper" 
             onClick={() => setIsCartOpen(true)}

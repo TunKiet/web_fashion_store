@@ -1029,4 +1029,227 @@
   font-weight: 700;
 }
 
+/* ==========================================
+   Auth Modal Styles (Login & Register)
+   ========================================== */
+.auth-modal-content {
+  position: relative;
+  width: 480px;
+  max-width: 90%;
+  background-color: rgba(252, 251, 250, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  padding: 40px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 2001;
+  pointer-events: auto;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.auth-brand {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--color-black);
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  letter-spacing: 1px;
+}
+
+.auth-error-message {
+  background-color: rgba(214, 48, 49, 0.08);
+  border-left: 2px solid #d63031;
+  color: #d63031;
+  padding: 12px 16px;
+  font-size: 12px;
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.auth-input-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--color-black);
+}
+
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  transition: var(--transition-fast);
+}
+
+.auth-input-wrapper:focus-within {
+  border-bottom-color: var(--color-gold);
+}
+
+.auth-input-icon {
+  position: absolute;
+  left: 0;
+  color: var(--color-text-muted);
+}
+
+.auth-input {
+  width: 100%;
+  padding: 12px 30px 12px 28px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-black);
+  outline: none;
+}
+
+.auth-input::placeholder {
+  color: #bbb;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  right: 0;
+  color: var(--color-text-muted);
+  transition: var(--transition-fast);
+}
+
+.auth-password-toggle:hover {
+  color: var(--color-black);
+}
+
+.auth-forgot-password {
+  text-align: right;
+  margin-top: -8px;
+}
+
+.auth-forgot-password a {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+}
+
+.auth-forgot-password a:hover {
+  color: var(--color-gold);
+}
+
+.auth-submit-btn {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  padding: 16px 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  transition: var(--transition-medium);
+  margin-top: 10px;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  background-color: var(--color-gold);
+  color: var(--color-white);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.auth-divider::before {
+  margin-right: 15px;
+}
+
+.auth-divider::after {
+  margin-left: 15px;
+}
+
+.auth-switch-mode {
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.auth-toggle-link {
+  font-weight: 600;
+  color: var(--color-black);
+  text-decoration: underline;
+  margin-left: 5px;
+}
+
+.auth-toggle-link:hover {
+  color: var(--color-gold);
+}
+
+.auth-user-welcome {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-logout-btn {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  padding: 4px 8px;
+  border-radius: 2px;
+  transition: var(--transition-fast);
+  margin-left: 5px;
+}
+
+.auth-logout-btn:hover {
+  color: #d63031;
+  border-color: #d63031;
+}
+
 

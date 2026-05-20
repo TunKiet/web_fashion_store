@@ -13,6 +13,7 @@ import Hero from './components/Hero';
 import ProductCard from './components/ProductCard';
 import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
+import AuthModal from './components/AuthModal';
 
 // Fallback sản phẩm cao cấp tiếng Việt khi không kết nối được Django API
 const FALLBACK_PRODUCTS = [
@@ -81,6 +82,30 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState('M');
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Khôi phục thông tin đăng nhập từ localStorage khi khởi động
+  useEffect(() => {
+    const savedUser = localStorage.getItem('the_k_luxury_user');
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  const handleAuthSuccess = (userData) => {
+    setCurrentUser(userData);
+    localStorage.setItem('the_k_luxury_user', JSON.stringify(userData));
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('the_k_luxury_user');
+  };
 
   // Lấy danh sách sản phẩm từ Django Backend API
   useEffect(() => {
@@ -201,6 +226,9 @@ function App() {
         cartItemCount={cartItemCount}
         setIsCartOpen={setIsCartOpen}
         isScrolled={isScrolled}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       {/* HERO BANNER SECTION */}
@@ -304,6 +332,17 @@ function App() {
             }}
             selectedSize={selectedSize}
             setSelectedSize={setSelectedSize}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* AUTH MODAL */}
+      <AnimatePresence>
+        {isAuthOpen && (
+          <AuthModal 
+            isOpen={isAuthOpen}
+            onClose={() => setIsAuthOpen(false)}
+            onAuthSuccess={handleAuthSuccess}
           />
         )}
       </AnimatePresence>
