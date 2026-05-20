@@ -1,1 +1,1 @@
-from .postgres import POSTGRES_DB_CONFIG, execute_raw_query
+from .postgres import POSTGRES_DB_CONFIG, execute_raw_query, check_postgres_connection

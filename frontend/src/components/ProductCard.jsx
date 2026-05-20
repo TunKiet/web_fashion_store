@@ -5,10 +5,10 @@ function ProductCard({ product, onOpenDetails, onAddToCart, isFavorite, onToggle
   return (
     <motion.div 
       layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.4 }}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 15 }}
+      transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
       className="product-card"
       onClick={() => onOpenDetails(product)}
       style={{ cursor: 'pointer' }}

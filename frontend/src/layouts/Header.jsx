@@ -55,26 +55,58 @@ function Header({
           <button 
             className={`nav-link ${activeCategory === 'ALL' ? 'active' : ''}`}
             onClick={() => setActiveCategory('ALL')}
+            style={{ position: 'relative' }}
           >
             Bộ Sưu Tập
+            {activeCategory === 'ALL' && (
+              <motion.div 
+                layoutId="activeNavLine" 
+                className="active-nav-line"
+                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
+              />
+            )}
           </button>
           <button 
             className={`nav-link ${activeCategory === 'DRESSES' ? 'active' : ''}`}
             onClick={() => setActiveCategory('DRESSES')}
+            style={{ position: 'relative' }}
           >
             Đầm Dạ Hội
+            {activeCategory === 'DRESSES' && (
+              <motion.div 
+                layoutId="activeNavLine" 
+                className="active-nav-line"
+                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
+              />
+            )}
           </button>
           <button 
             className={`nav-link ${activeCategory === 'OUTERWEAR' ? 'active' : ''}`}
             onClick={() => setActiveCategory('OUTERWEAR')}
+            style={{ position: 'relative' }}
           >
             Áo Khoác
+            {activeCategory === 'OUTERWEAR' && (
+              <motion.div 
+                layoutId="activeNavLine" 
+                className="active-nav-line"
+                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
+              />
+            )}
           </button>
           <button 
             className={`nav-link ${activeCategory === 'ACCESSORIES' ? 'active' : ''}`}
             onClick={() => setActiveCategory('ACCESSORIES')}
+            style={{ position: 'relative' }}
           >
             Phụ Kiện
+            {activeCategory === 'ACCESSORIES' && (
+              <motion.div 
+                layoutId="activeNavLine" 
+                className="active-nav-line"
+                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
+              />
+            )}
           </button>
         </nav>
 

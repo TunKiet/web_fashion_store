@@ -23,3 +23,45 @@ def execute_raw_query(query, params=None):
             columns = [col[0] for col in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
         return None
+
+# 3. Hàm kiểm tra kết nối PostgreSQL
+def check_postgres_connection():
+    """
+    Kiểm tra đã kết nối được PostgreSQL chưa.
+    Nếu chưa, thông báo log 'Chưa kết nối SQL được'.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Nếu Django mặc định dùng PostgreSQL
+    if connection.settings_dict.get('ENGINE') == 'django.db.backends.postgresql':
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1;")
+            logger.info("Kết nối PostgreSQL (default) thành công!")
+            print("[PostgreSQL] Ket noi PostgreSQL (default) thanh cong!")
+            return True
+        except Exception as e:
+            logger.error("Chưa kết nối SQL được: %s", e)
+            print("[PostgreSQL] Chua ket noi SQL duoc")
+            return False
+    else:
+        # Nếu đang dùng SQLite làm mặc định, kiểm tra động kết nối PostgreSQL qua POSTGRES_DB_CONFIG
+        from django.db.utils import ConnectionHandler
+        db_config = {
+            'default': POSTGRES_DB_CONFIG
+        }
+        handler = ConnectionHandler(db_config)
+        try:
+            conn = handler['default']
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT 1;")
+            logger.info("Kết nối PostgreSQL (dynamic check) thành công!")
+            print("[PostgreSQL] Ket noi PostgreSQL (dynamic check) thanh cong!")
+            return True
+        except Exception as e:
+            logger.error("Chưa kết nối SQL được: %s", e)
+            print("[PostgreSQL] Chua ket noi SQL duoc")
+            return False
+
+

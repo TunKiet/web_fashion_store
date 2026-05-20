@@ -10,6 +10,7 @@ function CartDrawer({ isCartOpen, onClose, cart, cartItemCount, cartSubtotal, on
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="cart-overlay" 
         onClick={onClose} 
       />
@@ -17,7 +18,7 @@ function CartDrawer({ isCartOpen, onClose, cart, cartItemCount, cartSubtotal, on
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
         className="cart-drawer"
       >
         <div className="cart-header">
