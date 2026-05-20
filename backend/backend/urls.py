@@ -16,8 +16,22 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
+
+def home_view(request):
+    return JsonResponse({
+        "message": "Welcome to the Web Fashion Store API!",
+        "status": "running",
+        "endpoints": {
+            "api_root": "/api/",
+            "items": "/api/items/",
+            "admin": "/admin/"
+        }
+    })
 
 urlpatterns = [
+    path('', home_view, name='home'),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
 ]
+
