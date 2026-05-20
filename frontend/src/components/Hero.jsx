@@ -6,6 +6,7 @@ import * as THREE from 'three';
 function Hero() {
   const canvasRef = useRef(null);
   const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
+  const scrollRef = useRef({ y: 0, targetY: 0 });
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -96,8 +97,13 @@ function Hero() {
       renderer.setSize(w, h, false);
     };
 
+    const handleScroll = () => {
+      scrollRef.current.targetY = window.scrollY;
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll);
 
     // 8. Animation Loop
     let animationFrameId;
@@ -108,13 +114,22 @@ function Hero() {
       mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.05;
       mouseRef.current.y += (mouseRef.current.targetY - mouseRef.current.y) * 0.05;
 
-      // Xoay nhẹ khối hạt theo thời gian
-      points.rotation.y += 0.0006;
-      points.rotation.x += 0.0003;
+      // Nội suy mượt vị trí cuộn trang
+      scrollRef.current.y += (scrollRef.current.targetY - scrollRef.current.y) * 0.1;
 
-      // Hiệu ứng dịch chuyển camera nhẹ theo vị trí chuột (Parallax)
+      // Tính toán vận tốc cuộn chuột (Scroll velocity) để đẩy tốc độ xoay hạt
+      const scrollVelocity = Math.abs(scrollRef.current.targetY - scrollRef.current.y);
+
+      // Xoay nhẹ khối hạt theo thời gian, xoay nhanh hơn khi đang cuộn
+      points.rotation.y += 0.0006 + scrollVelocity * 0.0004;
+      points.rotation.x += 0.0003 + scrollVelocity * 0.0002;
+
+      // Hiệu ứng dịch chuyển camera nhẹ theo vị trí chuột (Parallax) + di chuyển hạt lên trên khi cuộn xuống (Scroll)
       points.position.x = mouseRef.current.x * 3.5;
-      points.position.y = mouseRef.current.y * 2.0;
+      points.position.y = mouseRef.current.y * 2.0 + scrollRef.current.y * 0.025;
+      
+      // Hiệu ứng thu phóng chiều sâu (Z-axis zoom-in) khi cuộn chuột xuống
+      points.position.z = scrollRef.current.y * 0.035;
 
       // Cập nhật vị trí hạt bay lơ lửng
       const posAttr = geometry.attributes.position;
@@ -142,6 +157,7 @@ function Hero() {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
       if (renderer) renderer.dispose();
       if (geometry) geometry.dispose();
       if (material) material.dispose();

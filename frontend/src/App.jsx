@@ -85,11 +85,12 @@ function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Tự động reset về trang 1 khi lọc danh mục khác
+  // Tự động reset về trang 1 khi lọc danh mục khác hoặc tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeCategory]);
+  }, [activeCategory, searchQuery]);
 
   // Khôi phục thông tin đăng nhập từ localStorage khi khởi động
   useEffect(() => {
@@ -255,18 +256,32 @@ function App() {
     0
   );
 
-  // Bộ lọc danh mục sản phẩm (Viết hoa để so khớp)
-  const filteredProducts = activeCategory === 'ALL'
-    ? products
-    : activeCategory === 'WISHLIST'
-    ? products.filter(p => favorites.includes(p.id))
-    : products.filter(p => {
-        const catUpper = p.category.toUpperCase();
-        if (activeCategory === 'DRESSES') return catUpper === 'ĐẦM DẠ HỘI' || catUpper === 'DRESSES';
-        if (activeCategory === 'OUTERWEAR') return catUpper === 'ÁO KHOÁC' || catUpper === 'OUTERWEAR';
-        if (activeCategory === 'ACCESSORIES') return catUpper === 'PHỤ KIỆN' || catUpper === 'ACCESSORIES';
-        return catUpper === activeCategory;
-      });
+  // Bộ lọc danh mục sản phẩm kết hợp tìm kiếm (Viết hoa để so khớp)
+  const filteredProducts = products.filter(p => {
+    // 1. Lọc theo danh mục
+    let matchCat = activeCategory === 'ALL';
+    if (activeCategory === 'WISHLIST') {
+      matchCat = favorites.includes(p.id);
+    } else if (activeCategory === 'DRESSES') {
+      const catUpper = p.category.toUpperCase();
+      matchCat = catUpper === 'ĐẦM DẠ HỘI' || catUpper === 'DRESSES';
+    } else if (activeCategory === 'OUTERWEAR') {
+      const catUpper = p.category.toUpperCase();
+      matchCat = catUpper === 'ÁO KHOÁC' || catUpper === 'OUTERWEAR';
+    } else if (activeCategory === 'ACCESSORIES') {
+      const catUpper = p.category.toUpperCase();
+      matchCat = catUpper === 'PHỤ KIỆN' || catUpper === 'ACCESSORIES';
+    } else if (activeCategory !== 'ALL') {
+      matchCat = p.category.toUpperCase() === activeCategory;
+    }
+
+    // 2. Lọc theo từ khóa tìm kiếm (Tên hoặc danh mục sản phẩm)
+    const matchSearch = !searchQuery || 
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      p.category.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchCat && matchSearch;
+  });
 
   // Logic phân trang
   const ITEMS_PER_PAGE = 6;
@@ -288,6 +303,8 @@ function App() {
         onLogout={handleLogout}
         onOpenAuth={() => setIsAuthOpen(true)}
         favoriteCount={favorites.length}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
       />
 
       {/* HERO BANNER SECTION */}
