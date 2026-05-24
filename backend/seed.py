@@ -59,8 +59,8 @@ items = [
         "image_url": "/images/fashion_coat.png",
         "category": "Áo khoác",
         "is_featured": False
-    }
-        {
+    },
+    {
         "title": "Áo Khoác Trench Wool Cách Điệu",
         "description": "Một phiên bản hiện đại từ phom áo khoác dáng dài truyền thống, được may đo trên chất liệu len virgin wool mềm mịn trung tính. Điểm nhấn là thắt lưng bản to và ve áo cứng cáp.",
         "price": 36250000.00,
