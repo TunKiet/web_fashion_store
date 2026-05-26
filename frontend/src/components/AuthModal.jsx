@@ -110,6 +110,8 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           email: response.data.email,
           name: response.data.name,
           token: response.data.token,
+          is_superuser: response.data.is_superuser,
+          is_staff: response.data.is_staff,
         };
         onAuthSuccess(userData);
         onClose();

@@ -37,6 +37,8 @@ export const getCategories = () => api.get('/categories/');
 export const createCategory = (data) => api.post('/categories/', data);
 export const updateCategory = (id, data) => api.put(`/categories/${id}/`, data);
 export const deleteCategory = (id) => api.delete(`/categories/${id}/`);
+export const restoreCategory = (id) => api.post(`/categories/${id}/restore/`);
+export const forceDeleteCategory = (id) => api.delete(`/categories/${id}/force_delete/`);
 
 export const forgotPassword = (email) => api.post('/auth/forgot-password/', { email });
 export const resetPassword = (email, otp, newPassword) => api.post('/auth/reset-password/', { email, otp, new_password: newPassword });
