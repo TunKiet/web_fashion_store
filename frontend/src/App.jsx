@@ -14,7 +14,6 @@ import ProductCard from './components/ProductCard';
 import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
 import AuthModal from './components/AuthModal';
-import AdminDashboard from './components/AdminDashboard';
 
 // Fallback sản phẩm cao cấp tiếng Việt khi không kết nối được Django API
 const FALLBACK_PRODUCTS = [
@@ -87,7 +86,6 @@ function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [view, setView] = useState('store'); // 'store' or 'admin'
 
   // Tự động reset về trang 1 khi lọc danh mục khác hoặc tìm kiếm
   useEffect(() => {
@@ -106,13 +104,6 @@ function App() {
     }
   }, []);
 
-  // Redirect non-admins out of admin view
-  useEffect(() => {
-    if (view === 'admin' && (!currentUser || (!currentUser.is_superuser && !currentUser.is_staff))) {
-      setView('store');
-    }
-  }, [currentUser, view]);
-
   const handleAuthSuccess = (userData) => {
     setCurrentUser(userData);
     localStorage.setItem('the_k_luxury_user', JSON.stringify(userData));
@@ -121,10 +112,10 @@ function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('the_k_luxury_user');
-    setView('store');
   };
 
-  const fetchProducts = () => {
+  // Lấy danh sách sản phẩm từ Django Backend API
+  useEffect(() => {
     getItems()
       .then(res => {
         if (res.data && res.data.length > 0) {
@@ -144,11 +135,6 @@ function App() {
       .catch(err => {
         console.warn("Lỗi kết nối Backend API. Sử dụng dữ liệu dự phòng thiết kế cao cấp:", err);
       });
-  };
-
-  // Lấy danh sách sản phẩm từ Django Backend API
-  useEffect(() => {
-    fetchProducts();
   }, []);
 
   // Xử lý sự kiện scroll để làm hiệu ứng Header
@@ -304,23 +290,10 @@ function App() {
   const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
   const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
 
-  if (view === 'admin') {
-    return (
-      <AdminDashboard 
-        currentUser={currentUser} 
-        onClose={() => {
-          setView('store');
-          fetchProducts();
-        }} 
-      />
-    );
-  }
-
   return (
     <div className="App">
       {/* HEADER / NAVIGATION */}
       <Header 
-        onOpenAdmin={() => setView('admin')}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
         cartItemCount={cartItemCount}

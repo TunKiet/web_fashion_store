@@ -1,6 +1,8 @@
 import os
 from django.db import connection
 
+# 1. Cấu hình PostgreSQL cho Django settings.py
+# Bạn có thể import cấu hình này trực tiếp vào settings.py để kết nối với cơ sở dữ liệu PostgreSQL.
 POSTGRES_DB_CONFIG = {
     'ENGINE': 'django.db.backends.postgresql',
     'NAME': os.getenv('DB_NAME', 'the_k_luxury_db'),
@@ -10,6 +12,7 @@ POSTGRES_DB_CONFIG = {
     'PORT': os.getenv('DB_PORT', '5432'),
 }
 
+# 2. Hàm xử lý truy vấn PostgreSQL thô (Raw SQL connection)
 def execute_raw_query(query, params=None):
     """
     Thực thi một truy vấn SQL thô trên PostgreSQL và trả về kết quả dạng danh sách các dict.
@@ -21,6 +24,7 @@ def execute_raw_query(query, params=None):
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
         return None
 
+# 3. Hàm kiểm tra kết nối PostgreSQL
 def check_postgres_connection():
     """
     Kiểm tra đã kết nối được PostgreSQL chưa.
@@ -29,6 +33,7 @@ def check_postgres_connection():
     import logging
     logger = logging.getLogger(__name__)
     
+    # Nếu Django mặc định dùng PostgreSQL
     if connection.settings_dict.get('ENGINE') == 'django.db.backends.postgresql':
         try:
             with connection.cursor() as cursor:
@@ -41,6 +46,7 @@ def check_postgres_connection():
             print("[PostgreSQL] Chua ket noi SQL duoc")
             return False
     else:
+        # Nếu đang dùng SQLite làm mặc định, kiểm tra động kết nối PostgreSQL qua POSTGRES_DB_CONFIG
         from django.db.utils import ConnectionHandler
         db_config = {
             'default': POSTGRES_DB_CONFIG

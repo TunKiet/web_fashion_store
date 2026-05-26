@@ -1,10 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from api.controllers import ItemViewSet, CategoryViewSet, request_otp, reset_password, register, login
+from api.controllers import ItemViewSet, request_otp, reset_password, register, login
 
 router = DefaultRouter()
 router.register(r'items', ItemViewSet)
-router.register(r'categories', CategoryViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

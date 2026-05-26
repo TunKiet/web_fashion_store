@@ -26,13 +26,17 @@ def request_otp(request):
     if not user:
         return Response({"error": "Email không tồn tại trong hệ thống."}, status=status.HTTP_404_NOT_FOUND)
 
+    # Sinh mã OTP 6 chữ số ngẫu nhiên
     otp_code = f"{random.randint(100000, 999999)}"
 
     try:
+        # Vô hiệu hóa các mã OTP cũ chưa sử dụng của email này
         OTP.objects.filter(email=email, is_used=False).update(is_used=True)
 
+        # Lưu mã OTP mới vào cơ sở dữ liệu
         OTP.objects.create(email=email, otp=otp_code)
 
+        # Gửi mail cho khách hàng
         subject = "[The K Luxury] Mã OTP khôi phục mật khẩu"
         message = (
             f"Chào {user.first_name or user.username or 'quý khách'},\n\n"
@@ -70,11 +74,14 @@ def reset_password(request):
     if len(new_password) < 6:
         return Response({"error": "Mật khẩu phải chứa ít nhất 6 ký tự."}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Tìm OTP chưa dùng mới nhất cho email này
     otp_record = OTP.objects.filter(email=email, is_used=False).first()
     if not otp_record or otp_record.otp != otp:
         return Response({"error": "Mã OTP không chính xác hoặc đã được sử dụng trước đó."}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Kiểm tra hiệu lực 5 phút
     if otp_record.is_expired():
+        # Đánh dấu là đã dùng/hết hạn để dọn dẹp
         otp_record.is_used = True
         otp_record.save()
         return Response({"error": "Mã OTP đã hết hạn (hiệu lực tối đa 5 phút). Vui lòng yêu cầu mã mới."}, status=status.HTTP_400_BAD_REQUEST)
@@ -88,7 +95,7 @@ def reset_password(request):
         user.set_password(new_password)
         user.save()
 
-        
+        # Đánh dấu OTP đã được sử dụng thành công
         otp_record.is_used = True
         otp_record.save()
 
@@ -121,6 +128,7 @@ def register(request):
         return Response({"error": "Email này đã được đăng ký tài khoản thành viên."}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
+        # Tạo user mới
         user = User.objects.create_user(
             username=email,
             email=email,
@@ -153,6 +161,8 @@ def login(request):
     user = authenticate(username=email, password=password)
 
     if user is None:
+        # Có thể người dùng nhập email nhưng username khác (ví dụ admin)
+        # Hãy kiểm tra thử xem có user nào có email này không
         user_by_email = User.objects.filter(email=email).first()
         if user_by_email:
             user = authenticate(username=user_by_email.username, password=password)
@@ -161,14 +171,14 @@ def login(request):
         if not user.is_active:
             return Response({"error": "Tài khoản của bạn đã bị vô hiệu hóa."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Lấy hoặc tạo token cho user
         token, _ = Token.objects.get_or_create(user=user)
         
+        # Trả về thông tin user & token
         return Response({
             "token": token.key,
             "email": user.email,
             "name": user.first_name or user.username,
-            "is_superuser": user.is_superuser,
-            "is_staff": user.is_staff,
         }, status=status.HTTP_200_OK)
     else:
         return Response({"error": "Email hoặc mật khẩu không chính xác."}, status=status.HTTP_400_BAD_REQUEST)

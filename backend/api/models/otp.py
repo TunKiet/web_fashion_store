@@ -13,6 +13,7 @@ class OTP(models.Model):
         ordering = ['-created_at']
 
     def is_expired(self):
+        # Có hiệu lực khoảng 5 phút
         now = timezone.now()
         diff = now - self.created_at
         return diff > datetime.timedelta(minutes=5)
