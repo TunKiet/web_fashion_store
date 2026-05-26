@@ -1,7 +1,6 @@
 import os
 import django
 
-# Cấu hình môi trường Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
@@ -10,7 +9,6 @@ from api.models import Item
 print("Đang xóa các sản phẩm cũ...")
 Item.objects.all().delete()
 
-# Dữ liệu sản phẩm thời trang cao cấp bằng tiếng Việt
 items = [
     {
         "title": "Đầm Dạ Hội Lụa Draping Cao Cấp",

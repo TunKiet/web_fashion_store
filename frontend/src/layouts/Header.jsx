@@ -2,23 +2,23 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Search, User, Heart, X } from 'lucide-react';
 
-function Header({ 
-  activeCategory, 
-  setActiveCategory, 
-  cartItemCount, 
-  setIsCartOpen, 
-  isScrolled, 
-  currentUser, 
-  onLogout, 
-  onOpenAuth, 
+function Header({
+  activeCategory,
+  setActiveCategory,
+  cartItemCount,
+  setIsCartOpen,
+  isScrolled,
+  currentUser,
+  onLogout,
+  onOpenAuth,
   favoriteCount,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  onOpenAdmin
 }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef(null);
 
-  // Tự động focus vào ô tìm kiếm khi mở
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
       searchInputRef.current.focus();
@@ -28,8 +28,7 @@ function Header({
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearchQuery(val);
-    
-    // Cuộn nhẹ xuống grid sản phẩm để thấy kết quả thời gian thực
+
     const grid = document.getElementById('shop-grid');
     if (grid) {
       grid.scrollIntoView({ behavior: 'smooth' });
@@ -44,65 +43,63 @@ function Header({
   return (
     <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container header-container" style={{ position: 'relative' }}>
-        
-        {/* LOGO THƯƠNG HIỆU */}
+
         <div className="logo-img-container" style={{ visibility: isSearchOpen ? 'hidden' : 'visible' }}>
           <img src="/images/the_k_luxury_logo_transparent.png" alt="The K Luxury" className="logo-img" />
         </div>
 
-        {/* CÁC ĐƯỜNG LINK DANH MỤC */}
         <nav className="nav-links" style={{ visibility: isSearchOpen ? 'hidden' : 'visible' }}>
-          <button 
+          <button
             className={`nav-link ${activeCategory === 'ALL' ? 'active' : ''}`}
             onClick={() => setActiveCategory('ALL')}
             style={{ position: 'relative' }}
           >
             Bộ Sưu Tập
             {activeCategory === 'ALL' && (
-              <motion.div 
-                layoutId="activeNavLine" 
+              <motion.div
+                layoutId="activeNavLine"
                 className="active-nav-line"
                 transition={{ type: 'spring', stiffness: 220, damping: 25 }}
               />
             )}
           </button>
-          <button 
+          <button
             className={`nav-link ${activeCategory === 'DRESSES' ? 'active' : ''}`}
             onClick={() => setActiveCategory('DRESSES')}
             style={{ position: 'relative' }}
           >
             Đầm Dạ Hội
             {activeCategory === 'DRESSES' && (
-              <motion.div 
-                layoutId="activeNavLine" 
+              <motion.div
+                layoutId="activeNavLine"
                 className="active-nav-line"
                 transition={{ type: 'spring', stiffness: 220, damping: 25 }}
               />
             )}
           </button>
-          <button 
+          <button
             className={`nav-link ${activeCategory === 'OUTERWEAR' ? 'active' : ''}`}
             onClick={() => setActiveCategory('OUTERWEAR')}
             style={{ position: 'relative' }}
           >
             Áo Khoác
             {activeCategory === 'OUTERWEAR' && (
-              <motion.div 
-                layoutId="activeNavLine" 
+              <motion.div
+                layoutId="activeNavLine"
                 className="active-nav-line"
                 transition={{ type: 'spring', stiffness: 220, damping: 25 }}
               />
             )}
           </button>
-          <button 
+          <button
             className={`nav-link ${activeCategory === 'ACCESSORIES' ? 'active' : ''}`}
             onClick={() => setActiveCategory('ACCESSORIES')}
             style={{ position: 'relative' }}
           >
             Phụ Kiện
             {activeCategory === 'ACCESSORIES' && (
-              <motion.div 
-                layoutId="activeNavLine" 
+              <motion.div
+                layoutId="activeNavLine"
                 className="active-nav-line"
                 transition={{ type: 'spring', stiffness: 220, damping: 25 }}
               />
@@ -110,14 +107,13 @@ function Header({
           </button>
         </nav>
 
-        {/* HÀNH ĐỘNG ICON TRÊN HEADER */}
         <div className="header-actions" style={{ visibility: isSearchOpen ? 'hidden' : 'visible' }}>
           <button className="icon-btn" onClick={() => setIsSearchOpen(true)} aria-label="Tìm kiếm">
             <Search size={18} />
           </button>
 
-          <button 
-            className="icon-btn wishlist-icon-wrapper" 
+          <button
+            className="icon-btn wishlist-icon-wrapper"
             onClick={() => {
               setActiveCategory(activeCategory === 'WISHLIST' ? 'ALL' : 'WISHLIST');
               const grid = document.getElementById('shop-grid');
@@ -127,7 +123,7 @@ function Header({
           >
             <Heart size={18} fill={favoriteCount > 0 ? "#d1a852" : "none"} color={favoriteCount > 0 ? "#d1a852" : "currentColor"} />
             {favoriteCount > 0 && (
-              <motion.span 
+              <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 className="wishlist-badge"
@@ -136,10 +132,33 @@ function Header({
               </motion.span>
             )}
           </button>
-          
+
           {currentUser ? (
-            <div className="auth-user-welcome">
+            <div className="auth-user-welcome" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span>{currentUser.name}</span>
+              {(currentUser.is_superuser || currentUser.is_staff) && (
+                <button 
+                  className="auth-admin-btn" 
+                  onClick={onOpenAdmin}
+                  style={{
+                    color: '#d1a852',
+                    background: 'none',
+                    border: '1px solid #d1a852',
+                    borderRadius: '4px',
+                    padding: '4px 10px',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => { e.target.style.backgroundColor = 'rgba(209, 168, 82, 0.1)'; }}
+                  onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; }}
+                >
+                  Admin
+                </button>
+              )}
               <button className="auth-logout-btn" onClick={onLogout}>Thoát</button>
             </div>
           ) : (
@@ -148,14 +167,14 @@ function Header({
             </button>
           )}
 
-          <button 
-            className="icon-btn cart-icon-wrapper" 
+          <button
+            className="icon-btn cart-icon-wrapper"
             onClick={() => setIsCartOpen(true)}
             aria-label="Giỏ hàng"
           >
             <ShoppingBag size={18} />
             {cartItemCount > 0 && (
-              <motion.span 
+              <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 className="cart-badge"
@@ -165,11 +184,9 @@ function Header({
             )}
           </button>
         </div>
-
-        {/* THANH TÌM KIẾM TRƯỢT XUỐNG CAO CẤP */}
         <AnimatePresence>
           {isSearchOpen && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
