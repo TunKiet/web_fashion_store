@@ -49,7 +49,8 @@ function AdminDashboard({ onClose, currentUser }) {
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     slug: '',
-    description: ''
+    description: '',
+    parent: ''
   });
 
   // Fetch initial data
@@ -323,7 +324,8 @@ function AdminDashboard({ onClose, currentUser }) {
     setCategoryForm({
       name: '',
       slug: '',
-      description: ''
+      description: '',
+      parent: ''
     });
     setIsCategoryModalOpen(true);
   };
@@ -333,7 +335,8 @@ function AdminDashboard({ onClose, currentUser }) {
     setCategoryForm({
       name: category.name,
       slug: category.slug,
-      description: category.description || ''
+      description: category.description || '',
+      parent: category.parent || ''
     });
     setIsCategoryModalOpen(true);
   };
@@ -347,15 +350,22 @@ function AdminDashboard({ onClose, currentUser }) {
       return;
     }
 
+    const payload = {
+      name: categoryForm.name,
+      slug: categoryForm.slug,
+      description: categoryForm.description,
+      parent: categoryForm.parent ? parseInt(categoryForm.parent) : null
+    };
+
     try {
       if (editingCategory) {
         // Update
-        const res = await updateCategory(editingCategory.id, categoryForm);
+        const res = await updateCategory(editingCategory.id, payload);
         setCategories(prev => prev.map(c => c.id === editingCategory.id ? res.data : c));
         showSuccessMessage(`Cập nhật danh mục "${categoryForm.name}" thành công!`);
       } else {
         // Create
-        const res = await createCategory(categoryForm);
+        const res = await createCategory(payload);
         setCategories(prev => [res.data, ...prev]);
         showSuccessMessage(`Thêm danh mục "${categoryForm.name}" thành công!`);
       }
@@ -1093,6 +1103,31 @@ function AdminDashboard({ onClose, currentUser }) {
                   placeholder="Ví dụ: dam-da-hoi"
                   required
                 />
+              </div>
+
+              <div className="form-group">
+                <label>Danh mục cha (Không chọn nếu là danh mục gốc)</label>
+                <select
+                  value={categoryForm.parent || ''}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, parent: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    backgroundColor: '#1c1c1c',
+                    color: '#ffffff',
+                    borderRadius: '4px',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="">-- Danh mục gốc (Không có cha) --</option>
+                  {categories
+                    .filter(c => !c.parent && (!editingCategory || c.id !== editingCategory.id))
+                    .map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))
+                  }
+                </select>
               </div>
 
               <div className="form-group">

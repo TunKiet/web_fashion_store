@@ -315,7 +315,14 @@ function App() {
     if (activeCategory === 'WISHLIST') {
       matchCat = favorites.includes(p.id);
     } else if (activeCategory !== 'ALL') {
-      matchCat = p.category.toLowerCase() === activeCategory.toLowerCase();
+      const selectedCat = categories.find(c => c.name.toLowerCase() === activeCategory.toLowerCase());
+      if (selectedCat) {
+        const childCats = categories.filter(c => c.parent === selectedCat.id);
+        const allowedCategories = [selectedCat.name.toLowerCase(), ...childCats.map(c => c.name.toLowerCase())];
+        matchCat = allowedCategories.includes(p.category.toLowerCase());
+      } else {
+        matchCat = p.category.toLowerCase() === activeCategory.toLowerCase();
+      }
     }
 
     // 2. Lọc theo từ khóa tìm kiếm (Tên hoặc danh mục sản phẩm)
@@ -555,15 +562,45 @@ function App() {
             >
               Tất Cả
             </button>
-            {categories.map(c => (
-              <button
-                key={c.id}
-                className={`filter-tab ${activeCategory.toLowerCase() === c.name.toLowerCase() ? 'active' : ''}`}
-                onClick={() => setActiveCategory(c.name)}
-              >
-                {c.name}
-              </button>
-            ))}
+            {categories.filter(c => !c.parent).map(parent => {
+              const children = categories.filter(c => c.parent === parent.id);
+              const isParentActive = activeCategory.toLowerCase() === parent.name.toLowerCase() || 
+                children.some(child => activeCategory.toLowerCase() === child.name.toLowerCase());
+
+              if (children.length > 0) {
+                return (
+                  <div key={parent.id} className="filter-tab-dropdown-container">
+                    <button
+                      className={`filter-tab ${isParentActive ? 'active' : ''}`}
+                      onClick={() => setActiveCategory(parent.name)}
+                    >
+                      {parent.name}
+                    </button>
+                    <div className="filter-dropdown-menu">
+                      {children.map(child => (
+                        <button
+                          key={child.id}
+                          className={`filter-dropdown-item-btn ${activeCategory.toLowerCase() === child.name.toLowerCase() ? 'active' : ''}`}
+                          onClick={() => setActiveCategory(child.name)}
+                        >
+                          {child.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <button
+                  key={parent.id}
+                  className={`filter-tab ${activeCategory.toLowerCase() === parent.name.toLowerCase() ? 'active' : ''}`}
+                  onClick={() => setActiveCategory(parent.name)}
+                >
+                  {parent.name}
+                </button>
+              );
+            })}
           </div>
 
           {/* ADVANCED FILTERS FOR "ALL" CATEGORY */}

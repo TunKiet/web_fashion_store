@@ -2713,6 +2713,119 @@
   }
 }
 
+/* ==========================================
+   Parent-Child Categories Hover Dropdowns
+   ========================================== */
+.nav-item-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  padding: 15px 20px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 200;
+  text-align: left;
+}
+
+.nav-item-dropdown-container:hover .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.dropdown-item-btn {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.dropdown-item-btn:hover,
+.dropdown-item-btn.active {
+  color: var(--color-gold);
+  padding-left: 4px;
+}
+
+/* Homepage Filter Tabs dropdown */
+.filter-tab-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.filter-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  padding: 15px 20px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+  text-align: left;
+  margin-top: 12px;
+}
+
+.filter-tab-dropdown-container:hover .filter-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.filter-dropdown-item-btn {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.filter-dropdown-item-btn:hover,
+.filter-dropdown-item-btn.active {
+  color: var(--color-black);
+  padding-left: 4px;
+}
+
+
 
 
 

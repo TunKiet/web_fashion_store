@@ -70,23 +70,61 @@ function Header({
             )}
           </button>
 
-          {categories.map(c => (
-            <button
-              key={c.id}
-              className={`nav-link ${activeCategory.toLowerCase() === c.name.toLowerCase() ? 'active' : ''}`}
-              onClick={() => setActiveCategory(c.name)}
-              style={{ position: 'relative' }}
-            >
-              {c.name}
-              {activeCategory.toLowerCase() === c.name.toLowerCase() && (
-                <motion.div
-                  layoutId="activeNavLine"
-                  className="active-nav-line"
-                  transition={{ type: 'spring', stiffness: 220, damping: 25 }}
-                />
-              )}
-            </button>
-          ))}
+          {categories.filter(c => !c.parent).map(parent => {
+            const children = categories.filter(c => c.parent === parent.id);
+            const isParentActive = activeCategory.toLowerCase() === parent.name.toLowerCase() || 
+              children.some(child => activeCategory.toLowerCase() === child.name.toLowerCase());
+            
+            if (children.length > 0) {
+              return (
+                <div key={parent.id} className="nav-item-dropdown-container">
+                  <button
+                    className={`nav-link ${isParentActive ? 'active' : ''}`}
+                    onClick={() => setActiveCategory(parent.name)}
+                    style={{ position: 'relative' }}
+                  >
+                    {parent.name}
+                    {isParentActive && (
+                      <motion.div
+                        layoutId="activeNavLine"
+                        className="active-nav-line"
+                        transition={{ type: 'spring', stiffness: 220, damping: 25 }}
+                      />
+                    )}
+                  </button>
+                  <div className="nav-dropdown-menu">
+                    {children.map(child => (
+                      <button
+                        key={child.id}
+                        className={`dropdown-item-btn ${activeCategory.toLowerCase() === child.name.toLowerCase() ? 'active' : ''}`}
+                        onClick={() => setActiveCategory(child.name)}
+                      >
+                        {child.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <button
+                key={parent.id}
+                className={`nav-link ${activeCategory.toLowerCase() === parent.name.toLowerCase() ? 'active' : ''}`}
+                onClick={() => setActiveCategory(parent.name)}
+                style={{ position: 'relative' }}
+              >
+                {parent.name}
+                {activeCategory.toLowerCase() === parent.name.toLowerCase() && (
+                  <motion.div
+                    layoutId="activeNavLine"
+                    className="active-nav-line"
+                    transition={{ type: 'spring', stiffness: 220, damping: 25 }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="header-actions" style={{ visibility: isSearchOpen ? 'hidden' : 'visible' }}>
