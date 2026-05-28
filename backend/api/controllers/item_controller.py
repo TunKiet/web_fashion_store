@@ -2,35 +2,34 @@ import os
 import uuid
 from django.conf import settings
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from api.models import Item
 from api.serializers import ItemSerializer
-
-from rest_framework.decorators import api_view, permission_classes, action
+from api.permissions import HasModelPermission
+from api.services import ItemService
 
 class ItemViewSet(viewsets.ModelViewSet):
     serializer_class = ItemSerializer
+    permission_classes = [HasModelPermission]
 
     def get_queryset(self):
         if self.action in ['restore', 'force_delete']:
             return Item.objects.all()
         
         show_trash = self.request.query_params.get('trash', 'false').lower() == 'true'
-        if show_trash:
-            return Item.objects.filter(is_deleted=True)
-        return Item.objects.filter(is_deleted=False)
+        return ItemService.get_items(trash=show_trash)
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [AllowAny()]
-        return [IsAdminUser()]
+    def perform_create(self, serializer):
+        serializer.instance = ItemService.create_item(serializer.validated_data)
+
+    def perform_update(self, serializer):
+        serializer.instance = ItemService.update_item(self.get_object().id, serializer.validated_data)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.is_deleted = True
-        instance.save()
+        ItemService.delete_item(instance.id)
         return Response(
             {"message": f"Đã chuyển '{instance.title}' vào thùng rác."},
             status=status.HTTP_200_OK
@@ -40,8 +39,7 @@ class ItemViewSet(viewsets.ModelViewSet):
     def restore(self, request, pk=None):
         """Khôi phục sản phẩm từ thùng rác"""
         instance = self.get_object()
-        instance.is_deleted = False
-        instance.save()
+        ItemService.restore_item(instance.id)
         return Response(
             {"message": f"Đã khôi phục sản phẩm '{instance.title}' thành công."},
             status=status.HTTP_200_OK
@@ -51,8 +49,7 @@ class ItemViewSet(viewsets.ModelViewSet):
     def force_delete(self, request, pk=None):
         """Xóa vĩnh viễn sản phẩm khỏi cơ sở dữ liệu"""
         instance = self.get_object()
-        title = instance.title
-        instance.delete()
+        title = ItemService.force_delete_item(instance.id)
         return Response(
             {"message": f"Đã xóa vĩnh viễn sản phẩm '{title}' khỏi hệ thống."},
             status=status.HTTP_200_OK
@@ -65,6 +62,9 @@ def upload_image(request):
     Tải lên ảnh từ máy tính (PC) và lưu vào thư mục media.
     Trả về URL của tệp đã tải lên.
     """
+    if not request.user.is_superuser and not (request.user.has_perm('api.add_item') or request.user.has_perm('api.change_item')):
+        return Response({"error": "Bạn không có quyền tải ảnh lên."}, status=status.HTTP_403_FORBIDDEN)
+
     if 'image' not in request.FILES:
         return Response({"error": "Không tìm thấy tệp ảnh gửi lên."}, status=status.HTTP_400_BAD_REQUEST)
     

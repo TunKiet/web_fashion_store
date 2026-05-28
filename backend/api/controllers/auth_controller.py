@@ -1,13 +1,12 @@
-import random
 import logging
-from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from api.models import OTP
+from api.services import AuthService
 
 logger = logging.getLogger(__name__)
 
@@ -21,17 +20,8 @@ def request_otp(request):
     if not email:
         return Response({"error": "Vui lòng nhập địa chỉ email."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Kiểm tra xem user có tồn tại với email này không
-    user = User.objects.filter(email=email).first()
-    if not user:
-        return Response({"error": "Email không tồn tại trong hệ thống."}, status=status.HTTP_404_NOT_FOUND)
-
-    otp_code = f"{random.randint(100000, 999999)}"
-
     try:
-        OTP.objects.filter(email=email, is_used=False).update(is_used=True)
-
-        OTP.objects.create(email=email, otp=otp_code)
+        user, otp_code = AuthService.request_otp(email)
 
         subject = "[The K Luxury] Mã OTP khôi phục mật khẩu"
         message = (
@@ -49,6 +39,8 @@ def request_otp(request):
         logger.info(f"Đã gửi mã OTP {otp_code} tới email {email}")
         return Response({"message": "Mã OTP xác nhận đã được gửi tới email của bạn."}, status=status.HTTP_200_OK)
 
+    except ObjectDoesNotExist as e:
+        return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         logger.error(f"Lỗi khi gửi email OTP: {e}")
         return Response({"error": f"Không thể gửi email OTP lúc này. Chi tiết: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -67,34 +59,16 @@ def reset_password(request):
     if not email or not otp or not new_password:
         return Response({"error": "Vui lòng nhập đầy đủ Email, OTP và Mật khẩu mới."}, status=status.HTTP_400_BAD_REQUEST)
 
-    if len(new_password) < 6:
-        return Response({"error": "Mật khẩu phải chứa ít nhất 6 ký tự."}, status=status.HTTP_400_BAD_REQUEST)
-
-    otp_record = OTP.objects.filter(email=email, is_used=False).first()
-    if not otp_record or otp_record.otp != otp:
-        return Response({"error": "Mã OTP không chính xác hoặc đã được sử dụng trước đó."}, status=status.HTTP_400_BAD_REQUEST)
-
-    if otp_record.is_expired():
-        otp_record.is_used = True
-        otp_record.save()
-        return Response({"error": "Mã OTP đã hết hạn (hiệu lực tối đa 5 phút). Vui lòng yêu cầu mã mới."}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Thực hiện đổi mật khẩu
-    user = User.objects.filter(email=email).first()
-    if not user:
-        return Response({"error": "Người dùng sở hữu email này không còn tồn tại."}, status=status.HTTP_404_NOT_FOUND)
-
     try:
-        user.set_password(new_password)
-        user.save()
-
-        
-        otp_record.is_used = True
-        otp_record.save()
-
+        AuthService.reset_password(email, otp, new_password)
         logger.info(f"Đổi mật khẩu thành công cho email: {email}")
         return Response({"message": "Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới."}, status=status.HTTP_200_OK)
 
+    except ValidationError as e:
+        error_msg = e.messages[0] if hasattr(e, 'messages') else str(e)
+        return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+    except ObjectDoesNotExist as e:
+        return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         logger.error(f"Lỗi khi đặt lại mật khẩu: {e}")
         return Response({"error": "Không thể đổi mật khẩu lúc này. Vui lòng thử lại sau."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -113,22 +87,12 @@ def register(request):
     if not name or not email or not password:
         return Response({"error": "Vui lòng nhập đầy đủ Họ tên, Email và Mật khẩu."}, status=status.HTTP_400_BAD_REQUEST)
 
-    if len(password) < 6:
-        return Response({"error": "Mật khẩu phải chứa ít nhất 6 ký tự."}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Kiểm tra xem user đã tồn tại chưa
-    if User.objects.filter(username=email).exists() or User.objects.filter(email=email).exists():
-        return Response({"error": "Email này đã được đăng ký tài khoản thành viên."}, status=status.HTTP_400_BAD_REQUEST)
-
     try:
-        user = User.objects.create_user(
-            username=email,
-            email=email,
-            password=password,
-            first_name=name
-        )
-        user.save()
+        AuthService.register_user(name, email, password)
         return Response({"message": "Đăng ký tài khoản thành viên thành công! Vui lòng đăng nhập."}, status=status.HTTP_201_CREATED)
+    except ValidationError as e:
+        error_msg = e.messages[0] if hasattr(e, 'messages') else str(e)
+        return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         logger.error(f"Lỗi khi đăng ký user: {e}")
         return Response({"error": "Không thể tạo tài khoản vào lúc này. Vui lòng thử lại sau."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -140,36 +104,22 @@ def login(request):
     """
     Đăng nhập hệ thống và trả về Token xác thực.
     """
-    from django.contrib.auth import authenticate
-    from rest_framework.authtoken.models import Token
-
     email = request.data.get('email', '').strip()
     password = request.data.get('password', '')
 
     if not email or not password:
         return Response({"error": "Vui lòng nhập địa chỉ Email và Mật khẩu."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Django authenticate dùng username, ở đây ta lưu username là email
-    user = authenticate(username=email, password=password)
-
-    if user is None:
-        user_by_email = User.objects.filter(email=email).first()
-        if user_by_email:
-            user = authenticate(username=user_by_email.username, password=password)
-
-    if user is not None:
-        if not user.is_active:
-            return Response({"error": "Tài khoản của bạn đã bị vô hiệu hóa."}, status=status.HTTP_400_BAD_REQUEST)
-
-        token, _ = Token.objects.get_or_create(user=user)
-        
+    try:
+        user, token_key = AuthService.login_user(email, password)
         return Response({
-            "token": token.key,
+            "token": token_key,
             "email": user.email,
             "name": user.first_name or user.username,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
         }, status=status.HTTP_200_OK)
-    else:
-        return Response({"error": "Email hoặc mật khẩu không chính xác."}, status=status.HTTP_400_BAD_REQUEST)
+    except ValidationError as e:
+        error_msg = e.messages[0] if hasattr(e, 'messages') else str(e)
+        return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
