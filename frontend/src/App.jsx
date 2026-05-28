@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getItems, getCategories } from './services/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info } from 'lucide-react';
+import { Info, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import './App.css';
 
 // Import layouts
@@ -15,6 +15,8 @@ import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
 import AuthModal from './components/AuthModal';
 import AdminDashboard from './components/AdminDashboard';
+import UserProfile from './components/UserProfile';
+import CheckoutPage from './components/CheckoutPage';
 
 // Fallback sản phẩm cao cấp tiếng Việt khi không kết nối được Django API
 const FALLBACK_PRODUCTS = [
@@ -96,10 +98,22 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState('store'); // 'store' or 'admin'
 
+  // Advanced filters state for "ALL" category
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+
   // Tự động reset về trang 1 và cuộn lên đầu khi lọc danh mục khác hoặc tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (activeCategory !== 'ALL') {
+      setPriceMin('');
+      setPriceMax('');
+      setSortBy('newest');
+      setIsFilterExpanded(false);
+    }
   }, [activeCategory, searchQuery]);
 
   // Khôi phục thông tin đăng nhập từ localStorage khi khởi động
@@ -117,6 +131,13 @@ function App() {
   // Redirect non-admins out of admin view
   useEffect(() => {
     if (view === 'admin' && (!currentUser || (!currentUser.is_superuser && !currentUser.is_staff))) {
+      setView('store');
+    }
+  }, [currentUser, view]);
+
+  // Redirect logged out users from profile view
+  useEffect(() => {
+    if (view === 'profile' && !currentUser) {
       setView('store');
     }
   }, [currentUser, view]);
@@ -264,19 +285,19 @@ function App() {
   // Điều hướng sản phẩm Trước / Sau trong Modal chi tiết
   const handleNextProduct = () => {
     if (!selectedProduct) return;
-    const currentIndex = filteredProducts.findIndex(p => p.id === selectedProduct.id);
+    const currentIndex = sortedProducts.findIndex(p => p.id === selectedProduct.id);
     if (currentIndex === -1) return;
-    const nextIndex = (currentIndex + 1) % filteredProducts.length;
-    setSelectedProduct(filteredProducts[nextIndex]);
+    const nextIndex = (currentIndex + 1) % sortedProducts.length;
+    setSelectedProduct(sortedProducts[nextIndex]);
     setSelectedSize('M'); // reset size khi đổi sản phẩm
   };
 
   const handlePrevProduct = () => {
     if (!selectedProduct) return;
-    const currentIndex = filteredProducts.findIndex(p => p.id === selectedProduct.id);
+    const currentIndex = sortedProducts.findIndex(p => p.id === selectedProduct.id);
     if (currentIndex === -1) return;
-    const prevIndex = (currentIndex - 1 + filteredProducts.length) % filteredProducts.length;
-    setSelectedProduct(filteredProducts[prevIndex]);
+    const prevIndex = (currentIndex - 1 + sortedProducts.length) % sortedProducts.length;
+    setSelectedProduct(sortedProducts[prevIndex]);
     setSelectedSize('M'); // reset size khi đổi sản phẩm
   };
 
@@ -287,7 +308,7 @@ function App() {
     0
   );
 
-  // Bộ lọc danh mục sản phẩm kết hợp tìm kiếm (Viết hoa để so khớp)
+  // Bộ lọc danh mục sản phẩm kết hợp tìm kiếm và khoảng giá
   const filteredProducts = products.filter(p => {
     // 1. Lọc theo danh mục
     let matchCat = activeCategory === 'ALL';
@@ -302,15 +323,66 @@ function App() {
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.category.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchCat && matchSearch;
+    // 3. Lọc theo khoảng giá (chỉ áp dụng khi activeCategory === 'ALL')
+    let matchPrice = true;
+    if (activeCategory === 'ALL') {
+      const priceNum = parseFloat(p.price);
+      if (priceMin && priceNum < parseFloat(priceMin)) matchPrice = false;
+      if (priceMax && priceNum > parseFloat(priceMax)) matchPrice = false;
+    }
+
+    return matchCat && matchSearch && matchPrice;
+  });
+
+  // Sắp xếp sản phẩm (chỉ áp dụng khi activeCategory === 'ALL')
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (activeCategory === 'ALL') {
+      if (sortBy === 'newest') {
+        return b.id - a.id;
+      }
+      if (sortBy === 'oldest') {
+        return a.id - b.id;
+      }
+      if (sortBy === 'price-asc') {
+        return parseFloat(a.price) - parseFloat(b.price);
+      }
+      if (sortBy === 'price-desc') {
+        return parseFloat(b.price) - parseFloat(a.price);
+      }
+    }
+    return 0; // Giữ nguyên thứ tự mặc định
   });
 
   // Logic phân trang
   const ITEMS_PER_PAGE = 6;
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedProducts.length / ITEMS_PER_PAGE);
   const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
   const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = sortedProducts.slice(indexOfFirstItem, indexOfLastItem);
+
+  if (view === 'checkout') {
+    return (
+      <CheckoutPage
+        cart={cart}
+        cartSubtotal={cartSubtotal}
+        currentUser={currentUser}
+        onClearCart={() => setCart([])}
+        onClose={() => setView('store')}
+      />
+    );
+  }
+
+  if (view === 'profile') {
+    return (
+      <UserProfile
+        currentUser={currentUser}
+        favorites={favorites}
+        onClose={() => setView('store')}
+        onLogout={handleLogout}
+        onOpenAdmin={() => setView('admin')}
+      />
+    );
+  }
 
   if (view === 'admin') {
     return (
@@ -331,6 +403,7 @@ function App() {
       <Header
         categories={categories}
         onOpenAdmin={() => setView('admin')}
+        onOpenProfile={() => setView('profile')}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
         cartItemCount={cartItemCount}
@@ -493,9 +566,88 @@ function App() {
             ))}
           </div>
 
+          {/* ADVANCED FILTERS FOR "ALL" CATEGORY */}
+          {activeCategory === 'ALL' && (
+            <div className="advanced-filters-wrapper">
+              <button 
+                className={`advanced-filters-toggle ${isFilterExpanded ? 'active' : ''}`}
+                onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+              >
+                <SlidersHorizontal size={14} style={{ marginRight: '8px' }} />
+                <span>Bộ Lọc Nâng Cao</span>
+                <ChevronDown size={14} className="arrow-icon" style={{ marginLeft: '6px', transform: isFilterExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }} />
+              </button>
+
+              <AnimatePresence>
+                {isFilterExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    className="advanced-filters-drawer"
+                  >
+                    <div className="filters-drawer-grid">
+                      {/* Lọc Khoảng Giá */}
+                      <div className="filter-group">
+                        <label className="filter-label">Khoảng Giá (VNĐ)</label>
+                        <div className="price-inputs-row">
+                          <input 
+                            type="number" 
+                            placeholder="Từ" 
+                            value={priceMin}
+                            onChange={(e) => setPriceMin(e.target.value)}
+                            className="filter-price-input"
+                          />
+                          <span className="price-separator">-</span>
+                          <input 
+                            type="number" 
+                            placeholder="Đến" 
+                            value={priceMax}
+                            onChange={(e) => setPriceMax(e.target.value)}
+                            className="filter-price-input"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Sắp Xếp */}
+                      <div className="filter-group">
+                        <label className="filter-label">Sắp Xếp Theo</label>
+                        <select 
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value)}
+                          className="filter-sort-select"
+                        >
+                          <option value="newest">Mới nhất</option>
+                          <option value="oldest">Cũ nhất</option>
+                          <option value="price-asc">Giá: Thấp đến Cao</option>
+                          <option value="price-desc">Giá: Cao đến Thấp</option>
+                        </select>
+                      </div>
+
+                      {/* Nút Reset */}
+                      <div className="filter-group reset-group">
+                        <button 
+                          className="reset-filters-btn"
+                          onClick={() => {
+                            setPriceMin('');
+                            setPriceMax('');
+                            setSortBy('newest');
+                          }}
+                        >
+                          Xóa Bộ Lọc
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           <div className="shop-filters-info">
             <div className="results-count">
-              Hiển thị {filteredProducts.length} sản phẩm
+              Hiển thị {sortedProducts.length} sản phẩm
             </div>
             <div className="sustainability-badge">
               <Info size={12} className="inline-icon" style={{ marginRight: '6px' }} />
@@ -503,7 +655,7 @@ function App() {
             </div>
           </div>
 
-          {filteredProducts.length === 0 ? (
+          {sortedProducts.length === 0 ? (
             <div className="no-products-state">
               <p>Hiện không có sản phẩm nào thuộc danh mục này.</p>
             </div>
@@ -581,6 +733,15 @@ function App() {
             cartSubtotal={cartSubtotal}
             onUpdateQuantity={updateQuantity}
             onRemoveFromCart={removeFromCart}
+            onCheckout={() => {
+              setIsCartOpen(false);
+              if (!currentUser) {
+                alert("Vui lòng đăng nhập để tiến hành thanh toán đơn hàng.");
+                setIsAuthOpen(true);
+              } else {
+                setView('checkout');
+              }
+            }}
           />
         )}
       </AnimatePresence>
