@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { ShoppingBag, Trash } from 'lucide-react';
 
-function CartDrawer({ isCartOpen, onClose, cart, cartItemCount, cartSubtotal, onUpdateQuantity, onRemoveFromCart }) {
+function CartDrawer({ isCartOpen, onClose, cart, cartItemCount, cartSubtotal, onUpdateQuantity, onRemoveFromCart, onCheckout }) {
   if (!isCartOpen) return null;
 
   return (
@@ -65,7 +65,7 @@ function CartDrawer({ isCartOpen, onClose, cart, cartItemCount, cartSubtotal, on
               <span>Tổng cộng:</span>
               <span>{cartSubtotal.toLocaleString('vi-VN')} đ</span>
             </div>
-            <button className="checkout-btn" onClick={() => alert("Chức năng thanh toán đang được tích hợp.")}>Tiến Hành Thanh Toán</button>
+            <button className="checkout-btn" onClick={onCheckout}>Tiến Hành Thanh Toán</button>
           </div>
         )}
       </motion.div>

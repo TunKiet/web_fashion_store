@@ -15,7 +15,8 @@ function Header({
   searchQuery,
   setSearchQuery,
   onOpenAdmin,
-  categories = []
+  categories = [],
+  onOpenProfile
 }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef(null);
@@ -116,7 +117,36 @@ function Header({
 
           {currentUser ? (
             <div className="auth-user-welcome" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span>{currentUser.name}</span>
+              <button 
+                onClick={onOpenProfile}
+                className="user-profile-toggle-btn"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-black)',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  transition: 'all 0.2s ease',
+                  fontSize: '12px',
+                  letterSpacing: '0.5px'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.color = '#d1a852';
+                  e.currentTarget.style.backgroundColor = 'rgba(209, 168, 82, 0.05)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.color = 'var(--color-black)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <User size={14} style={{ color: '#d1a852' }} />
+                <span>{currentUser.name}</span>
+              </button>
               {(currentUser.is_superuser || currentUser.is_staff) && (
                 <button 
                   className="auth-admin-btn" 
