@@ -9,11 +9,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
 
     def get_queryset(self):
-        # Default: trả về tất cả (cả đã xóa tạm) để frontend tự lọc
         return Category.objects.all()
 
     def destroy(self, request, *args, **kwargs):
-        """Soft delete: chỉ đổi trạng thái is_deleted = True"""
         instance = self.get_object()
         instance.is_deleted = True
         instance.save()

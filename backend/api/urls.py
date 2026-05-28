@@ -4,7 +4,7 @@ from api.controllers import ItemViewSet, CategoryViewSet, request_otp, reset_pas
 
 router = DefaultRouter()
 router.register(r'items', ItemViewSet)
-router.register(r'categories', CategoryViewSet)
+router.register(r'categories', CategoryViewSet, basename='category')
 
 urlpatterns = [
     path('', include(router.urls)),
