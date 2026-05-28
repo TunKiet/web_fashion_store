@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAdminUser
 from api.models import Category
 from api.serializers import CategorySerializer
 
@@ -9,7 +10,18 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
 
     def get_queryset(self):
-        return Category.objects.all()
+        if self.action in ['restore', 'force_delete']:
+            return Category.objects.all()
+        
+        show_trash = self.request.query_params.get('trash', 'false').lower() == 'true'
+        if show_trash:
+            return Category.objects.filter(is_deleted=True)
+        return Category.objects.filter(is_deleted=False)
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAdminUser()]
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

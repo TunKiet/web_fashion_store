@@ -1,4 +1,4 @@
-function Footer() {
+function Footer({ categories = [], setActiveCategory }) {
   return (
     <footer className="site-footer">
       <div className="container">
@@ -12,10 +12,34 @@ function Footer() {
           <div className="footer-col">
             <h4>Cửa Hàng</h4>
             <ul className="footer-links-list">
-              <li className="footer-link-item"><a href="#shop-grid">Tất Cả Sản Phẩm</a></li>
-              <li className="footer-link-item"><a href="#shop-grid">Đầm Dạ Hội</a></li>
-              <li className="footer-link-item"><a href="#shop-grid">Áo Khoác Dáng Dài</a></li>
-              <li className="footer-link-item"><a href="#shop-grid">Túi & Phụ Kiện</a></li>
+              <li className="footer-link-item">
+                <a 
+                  href="#shop-grid"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (setActiveCategory) setActiveCategory('ALL');
+                    const el = document.getElementById('shop-grid');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Tất Cả Sản Phẩm
+                </a>
+              </li>
+              {categories.map(c => (
+                <li key={c.id} className="footer-link-item">
+                  <a 
+                    href="#shop-grid"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (setActiveCategory) setActiveCategory(c.name);
+                      const el = document.getElementById('shop-grid');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    {c.name}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
           <div className="footer-col">

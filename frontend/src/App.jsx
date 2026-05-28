@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getItems } from './services/api';
+import { getItems, getCategories } from './services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info } from 'lucide-react';
 import './App.css';
@@ -71,11 +71,18 @@ const FALLBACK_PRODUCTS = [
     image_url: "/images/fashion_coat.png",
     category: "Áo khoác",
     is_featured: false
-  }
+  },
+];
+
+const FALLBACK_CATEGORIES = [
+  { id: 1, name: "Đầm Dạ Hội", slug: "dam-da-hoi" },
+  { id: 2, name: "Áo Khoác", slug: "ao-khoac" },
+  { id: 3, name: "Phụ Kiện", slug: "phu-kien" }
 ];
 
 function App() {
   const [products, setProducts] = useState(FALLBACK_PRODUCTS);
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [cart, setCart] = useState([]);
@@ -89,9 +96,10 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState('store'); // 'store' or 'admin'
 
-  // Tự động reset về trang 1 khi lọc danh mục khác hoặc tìm kiếm
+  // Tự động reset về trang 1 và cuộn lên đầu khi lọc danh mục khác hoặc tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeCategory, searchQuery]);
 
   // Khôi phục thông tin đăng nhập từ localStorage khi khởi động
@@ -135,6 +143,8 @@ function App() {
               if (index % 3 === 0) img = "/images/fashion_dress.png";
               else if (index % 3 === 1) img = "/images/fashion_coat.png";
               else img = "/images/fashion_bag.png";
+            } else if (img.startsWith('/media/')) {
+              img = `http://localhost:8000${img}`;
             }
             return { ...item, image_url: img };
           });
@@ -146,9 +156,22 @@ function App() {
       });
   };
 
-  // Lấy danh sách sản phẩm từ Django Backend API
+  const fetchCategories = () => {
+    getCategories()
+      .then(res => {
+        if (res.data && res.data.length > 0) {
+          setCategories(res.data);
+        }
+      })
+      .catch(err => {
+        console.warn("Lỗi kết nối Backend API khi tải danh mục. Sử dụng danh mục mặc định:", err);
+      });
+  };
+
+  // Lấy danh sách sản phẩm và danh mục từ Django Backend API
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   // Xử lý sự kiện scroll để làm hiệu ứng Header
@@ -166,17 +189,11 @@ function App() {
 
   // Thêm vào giỏ hàng
   const addToCart = (product, size = 'M') => {
-    // ==========================================
-    // CHÚ THÍCH KẾT NỐI BACKEND (AUTHENTICATION GATEWAY):
-    // Thay đổi điều kiện này khi bạn tích hợp JWT hoặc Session Authentication từ API Django.
-    // Ví dụ: if (!localStorage.getItem('token')) hoặc sử dụng Context State.
-    // ==========================================
     if (!currentUser) {
       alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.');
       setIsAuthOpen(true);
       return;
     }
-    // ==========================================
 
     setCart(prevCart => {
       const existingItemIndex = prevCart.findIndex(
@@ -231,9 +248,9 @@ function App() {
     }
     // ==========================================
 
-    setFavorites(prev => 
-      prev.includes(productId) 
-        ? prev.filter(id => id !== productId) 
+    setFavorites(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
         : [...prev, productId]
     );
   };
@@ -276,22 +293,13 @@ function App() {
     let matchCat = activeCategory === 'ALL';
     if (activeCategory === 'WISHLIST') {
       matchCat = favorites.includes(p.id);
-    } else if (activeCategory === 'DRESSES') {
-      const catUpper = p.category.toUpperCase();
-      matchCat = catUpper === 'ĐẦM DẠ HỘI' || catUpper === 'DRESSES';
-    } else if (activeCategory === 'OUTERWEAR') {
-      const catUpper = p.category.toUpperCase();
-      matchCat = catUpper === 'ÁO KHOÁC' || catUpper === 'OUTERWEAR';
-    } else if (activeCategory === 'ACCESSORIES') {
-      const catUpper = p.category.toUpperCase();
-      matchCat = catUpper === 'PHỤ KIỆN' || catUpper === 'ACCESSORIES';
     } else if (activeCategory !== 'ALL') {
-      matchCat = p.category.toUpperCase() === activeCategory;
+      matchCat = p.category.toLowerCase() === activeCategory.toLowerCase();
     }
 
     // 2. Lọc theo từ khóa tìm kiếm (Tên hoặc danh mục sản phẩm)
-    const matchSearch = !searchQuery || 
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchSearch = !searchQuery ||
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.category.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchCat && matchSearch;
@@ -306,12 +314,13 @@ function App() {
 
   if (view === 'admin') {
     return (
-      <AdminDashboard 
-        currentUser={currentUser} 
+      <AdminDashboard
+        currentUser={currentUser}
         onClose={() => {
           setView('store');
           fetchProducts();
-        }} 
+          fetchCategories();
+        }}
       />
     );
   }
@@ -319,7 +328,8 @@ function App() {
   return (
     <div className="App">
       {/* HEADER / NAVIGATION */}
-      <Header 
+      <Header
+        categories={categories}
         onOpenAdmin={() => setView('admin')}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
@@ -334,46 +344,153 @@ function App() {
         setSearchQuery={setSearchQuery}
       />
 
-      {/* HERO BANNER SECTION */}
-      <Hero />
+      {/* HERO BANNER OR CATEGORY BANNER SECTION */}
+      {activeCategory === 'ALL' ? (
+        <Hero />
+      ) : (
+        (() => {
+          const currentCategoryObj = categories.find(c => c.name.toLowerCase() === activeCategory.toLowerCase());
+          if (activeCategory === 'WISHLIST') {
+            return (
+              <div className="category-banner-section" style={{
+                padding: '160px 0 80px 0',
+                background: 'linear-gradient(135deg, #111111 0%, #1a1a1a 100%)',
+                textAlign: 'center',
+                borderBottom: '1px solid rgba(189, 163, 128, 0.15)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '-50%',
+                  left: '-50%',
+                  width: '200%',
+                  height: '200%',
+                  background: 'radial-gradient(circle, rgba(189, 163, 128, 0.03) 0%, transparent 70%)',
+                  pointerEvents: 'none'
+                }} />
+                <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+                  <span style={{ 
+                    color: '#bda380', 
+                    fontSize: '0.9rem', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '3px', 
+                    display: 'block',
+                    marginBottom: '10px'
+                  }}>
+                    Yêu Thích
+                  </span>
+                  <h1 style={{ 
+                    fontSize: '3rem', 
+                    color: '#ffffff', 
+                    fontFamily: 'var(--font-serif, serif)', 
+                    fontWeight: '300',
+                    margin: '0 0 15px 0',
+                    letterSpacing: '1px'
+                  }}>
+                    Danh Sách Ưa Thích
+                  </h1>
+                  <p style={{ 
+                    color: '#999999', 
+                    maxWidth: '600px', 
+                    margin: '0 auto', 
+                    fontSize: '1rem',
+                    lineHeight: '1.6',
+                    fontWeight: '300'
+                  }}>
+                    Nơi lưu trữ những thiết kế cao cấp và phụ kiện sang trọng bạn đã đặc biệt quan tâm.
+                  </p>
+                </div>
+              </div>
+            );
+          } else if (currentCategoryObj) {
+            return (
+              <div className="category-banner-section" style={{
+                padding: '160px 0 80px 0',
+                background: 'linear-gradient(135deg, #111111 0%, #1a1a1a 100%)',
+                textAlign: 'center',
+                borderBottom: '1px solid rgba(189, 163, 128, 0.15)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '-50%',
+                  left: '-50%',
+                  width: '200%',
+                  height: '200%',
+                  background: 'radial-gradient(circle, rgba(189, 163, 128, 0.03) 0%, transparent 70%)',
+                  pointerEvents: 'none'
+                }} />
+                <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+                  <span style={{ 
+                    color: '#bda380', 
+                    fontSize: '0.9rem', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '3px', 
+                    display: 'block',
+                    marginBottom: '10px'
+                  }}>
+                    Bộ Sưu Tập
+                  </span>
+                  <h1 style={{ 
+                    fontSize: '3rem', 
+                    color: '#ffffff', 
+                    fontFamily: 'var(--font-serif, serif)', 
+                    fontWeight: '300',
+                    margin: '0 0 15px 0',
+                    letterSpacing: '1px'
+                  }}>
+                    {currentCategoryObj.name}
+                  </h1>
+                  <p style={{ 
+                    color: '#999999', 
+                    maxWidth: '600px', 
+                    margin: '0 auto', 
+                    fontSize: '1rem',
+                    lineHeight: '1.6',
+                    fontWeight: '300'
+                  }}>
+                    {currentCategoryObj.description || `Những thiết kế độc bản thuộc dòng sản phẩm ${currentCategoryObj.name} của The K Luxury.`}
+                  </p>
+                </div>
+              </div>
+            );
+          }
+          return <Hero />;
+        })()
+      )}
 
       {/* SHOP SECTION */}
       <section className="shop-section" id="shop-grid">
         <div className="container">
-          <div className="section-header">
-            <h2 className="section-title">
-              {activeCategory === 'WISHLIST' ? 'Danh Sách Yêu Thích' : 'Bộ Sưu Tập Độc Bản'}
-            </h2>
-            <p className="section-subtitle">
-              {activeCategory === 'WISHLIST' ? 'Những thiết kế thượng lưu được bạn đặc biệt lưu giữ' : 'Thiết kế hoàn mỹ, may đo tinh xảo cho tủ đồ cao cấp của bạn'}
-            </p>
-          </div>
+          {activeCategory === 'ALL' && (
+            <div className="section-header">
+              <h2 className="section-title">
+                Bộ Sưu Tập Độc Bản
+              </h2>
+              <p className="section-subtitle">
+                Thiết kế hoàn mỹ, may đo tinh xảo cho tủ đồ cao cấp của bạn
+              </p>
+            </div>
+          )}
 
           <div className="filter-tabs">
-            <button 
+            <button
               className={`filter-tab ${activeCategory === 'ALL' ? 'active' : ''}`}
               onClick={() => setActiveCategory('ALL')}
             >
               Tất Cả
             </button>
-            <button 
-              className={`filter-tab ${activeCategory === 'DRESSES' ? 'active' : ''}`}
-              onClick={() => setActiveCategory('DRESSES')}
-            >
-              Đầm Dạ Hội
-            </button>
-            <button 
-              className={`filter-tab ${activeCategory === 'OUTERWEAR' ? 'active' : ''}`}
-              onClick={() => setActiveCategory('OUTERWEAR')}
-            >
-              Áo Khoác
-            </button>
-            <button 
-              className={`filter-tab ${activeCategory === 'ACCESSORIES' ? 'active' : ''}`}
-              onClick={() => setActiveCategory('ACCESSORIES')}
-            >
-              Phụ Kiện
-            </button>
+            {categories.map(c => (
+              <button
+                key={c.id}
+                className={`filter-tab ${activeCategory.toLowerCase() === c.name.toLowerCase() ? 'active' : ''}`}
+                onClick={() => setActiveCategory(c.name)}
+              >
+                {c.name}
+              </button>
+            ))}
           </div>
 
           <div className="shop-filters-info">
@@ -395,13 +512,14 @@ function App() {
               <div className="products-grid">
                 <AnimatePresence mode="popLayout">
                   {currentItems.map(product => (
-                    <ProductCard 
+                    <ProductCard
                       key={product.id}
                       product={product}
                       onOpenDetails={openProductDetails}
                       onAddToCart={addToCart}
                       isFavorite={favorites.includes(product.id)}
                       onToggleFavorite={toggleFavorite}
+                      onSelectCategory={setActiveCategory}
                     />
                   ))}
                 </AnimatePresence>
@@ -410,14 +528,14 @@ function App() {
               {/* THANH PHÂN TRANG */}
               {totalPages > 1 && (
                 <div className="pagination-container">
-                  <button 
+                  <button
                     className="pagination-btn"
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
                   >
                     &lt;
                   </button>
-                  
+
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
                     <button
                       key={pageNum}
@@ -432,7 +550,7 @@ function App() {
                     </button>
                   ))}
 
-                  <button 
+                  <button
                     className="pagination-btn"
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
@@ -447,12 +565,15 @@ function App() {
       </section>
 
       {/* FOOTER */}
-      <Footer />
+      <Footer 
+        categories={categories}
+        setActiveCategory={setActiveCategory}
+      />
 
       {/* CART DRAWER */}
       <AnimatePresence>
         {isCartOpen && (
-          <CartDrawer 
+          <CartDrawer
             isCartOpen={isCartOpen}
             onClose={() => setIsCartOpen(false)}
             cart={cart}
@@ -467,7 +588,7 @@ function App() {
       {/* PRODUCT DETAIL MODAL */}
       <AnimatePresence>
         {selectedProduct && (
-          <ProductModal 
+          <ProductModal
             product={selectedProduct}
             onClose={() => setSelectedProduct(null)}
             onAddToCart={(prod, size) => {
@@ -478,6 +599,7 @@ function App() {
             setSelectedSize={setSelectedSize}
             onNext={handleNextProduct}
             onPrev={handlePrevProduct}
+            onSelectCategory={setActiveCategory}
           />
         )}
       </AnimatePresence>
@@ -485,7 +607,7 @@ function App() {
       {/* AUTH MODAL */}
       <AnimatePresence>
         {isAuthOpen && (
-          <AuthModal 
+          <AuthModal
             isOpen={isAuthOpen}
             onClose={() => setIsAuthOpen(false)}
             onAuthSuccess={handleAuthSuccess}

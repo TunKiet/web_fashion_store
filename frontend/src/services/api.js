@@ -29,11 +29,20 @@ api.interceptors.request.use(
 );
 
 export const getItems = () => api.get('/items/');
+export const getDeletedItems = () => api.get('/items/?trash=true');
 export const createItem = (data) => api.post('/items/', data);
 export const updateItem = (id, data) => api.put(`/items/${id}/`, data);
 export const deleteItem = (id) => api.delete(`/items/${id}/`);
+export const restoreItem = (id) => api.post(`/items/${id}/restore/`);
+export const forceDeleteItem = (id) => api.delete(`/items/${id}/force_delete/`);
+export const uploadImage = (formData) => api.post('/upload/', formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+  },
+});
 
 export const getCategories = () => api.get('/categories/');
+export const getDeletedCategories = () => api.get('/categories/?trash=true');
 export const createCategory = (data) => api.post('/categories/', data);
 export const updateCategory = (id, data) => api.put(`/categories/${id}/`, data);
 export const deleteCategory = (id) => api.delete(`/categories/${id}/`);

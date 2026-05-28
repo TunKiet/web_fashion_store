@@ -7,6 +7,7 @@ class Item(models.Model):
     image_url = models.CharField(max_length=500, default="", blank=True)
     category = models.CharField(max_length=100, default="Uncategorized")
     is_featured = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

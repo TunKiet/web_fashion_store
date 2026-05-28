@@ -14,7 +14,8 @@ function Header({
   favoriteCount,
   searchQuery,
   setSearchQuery,
-  onOpenAdmin
+  onOpenAdmin,
+  categories = []
 }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef(null);
@@ -44,7 +45,11 @@ function Header({
     <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container header-container" style={{ position: 'relative' }}>
 
-        <div className="logo-img-container" style={{ visibility: isSearchOpen ? 'hidden' : 'visible' }}>
+        <div 
+          className="logo-img-container" 
+          style={{ visibility: isSearchOpen ? 'hidden' : 'visible', cursor: 'pointer' }}
+          onClick={() => setActiveCategory('ALL')}
+        >
           <img src="/images/the_k_luxury_logo_transparent.png" alt="The K Luxury" className="logo-img" />
         </div>
 
@@ -63,48 +68,24 @@ function Header({
               />
             )}
           </button>
-          <button
-            className={`nav-link ${activeCategory === 'DRESSES' ? 'active' : ''}`}
-            onClick={() => setActiveCategory('DRESSES')}
-            style={{ position: 'relative' }}
-          >
-            Đầm Dạ Hội
-            {activeCategory === 'DRESSES' && (
-              <motion.div
-                layoutId="activeNavLine"
-                className="active-nav-line"
-                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
-              />
-            )}
-          </button>
-          <button
-            className={`nav-link ${activeCategory === 'OUTERWEAR' ? 'active' : ''}`}
-            onClick={() => setActiveCategory('OUTERWEAR')}
-            style={{ position: 'relative' }}
-          >
-            Áo Khoác
-            {activeCategory === 'OUTERWEAR' && (
-              <motion.div
-                layoutId="activeNavLine"
-                className="active-nav-line"
-                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
-              />
-            )}
-          </button>
-          <button
-            className={`nav-link ${activeCategory === 'ACCESSORIES' ? 'active' : ''}`}
-            onClick={() => setActiveCategory('ACCESSORIES')}
-            style={{ position: 'relative' }}
-          >
-            Phụ Kiện
-            {activeCategory === 'ACCESSORIES' && (
-              <motion.div
-                layoutId="activeNavLine"
-                className="active-nav-line"
-                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
-              />
-            )}
-          </button>
+
+          {categories.map(c => (
+            <button
+              key={c.id}
+              className={`nav-link ${activeCategory.toLowerCase() === c.name.toLowerCase() ? 'active' : ''}`}
+              onClick={() => setActiveCategory(c.name)}
+              style={{ position: 'relative' }}
+            >
+              {c.name}
+              {activeCategory.toLowerCase() === c.name.toLowerCase() && (
+                <motion.div
+                  layoutId="activeNavLine"
+                  className="active-nav-line"
+                  transition={{ type: 'spring', stiffness: 220, damping: 25 }}
+                />
+              )}
+            </button>
+          ))}
         </nav>
 
         <div className="header-actions" style={{ visibility: isSearchOpen ? 'hidden' : 'visible' }}>

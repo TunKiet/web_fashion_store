@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { ShoppingBag, Heart } from 'lucide-react';
 
-function ProductCard({ product, onOpenDetails, onAddToCart, isFavorite, onToggleFavorite }) {
+function ProductCard({ product, onOpenDetails, onAddToCart, isFavorite, onToggleFavorite, onSelectCategory }) {
   return (
     <motion.div 
       layout
@@ -39,7 +39,18 @@ function ProductCard({ product, onOpenDetails, onAddToCart, isFavorite, onToggle
         </button>
       </div>
       <div className="product-info-sec">
-        <span className="product-cat">{product.category}</span>
+        <span 
+          className="product-cat"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onSelectCategory) {
+              onSelectCategory(product.category);
+            }
+          }}
+          style={{ cursor: 'pointer' }}
+        >
+          {product.category}
+        </span>
         <h3 className="product-name">{product.title}</h3>
         <span className="product-price">{parseFloat(product.price).toLocaleString('vi-VN')} đ</span>
       </div>

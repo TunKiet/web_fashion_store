@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-function ProductModal({ product, onClose, onAddToCart, selectedSize, setSelectedSize, onNext, onPrev }) {
+function ProductModal({ product, onClose, onAddToCart, selectedSize, setSelectedSize, onNext, onPrev, onSelectCategory }) {
   if (!product) return null;
 
   return (
@@ -41,7 +41,18 @@ function ProductModal({ product, onClose, onAddToCart, selectedSize, setSelected
           </div>
           
           <div className="modal-info-side">
-            <span className="modal-cat">{product.category}</span>
+            <span 
+              className="modal-cat"
+              onClick={() => {
+                if (onSelectCategory) {
+                  onSelectCategory(product.category);
+                  onClose();
+                }
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              {product.category}
+            </span>
             <h2 className="modal-title">{product.title}</h2>
             <p className="modal-price-display">{parseFloat(product.price).toLocaleString('vi-VN')} đ</p>
             
