@@ -1,10 +1,16 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from api.controllers import ItemViewSet, CategoryViewSet, request_otp, reset_password, register, login, upload_image
+from api.controllers import (
+    ItemViewSet, CategoryViewSet, UserViewSet, GroupViewSet, PermissionViewSet,
+    request_otp, reset_password, register, login, upload_image
+)
 
 router = DefaultRouter()
 router.register(r'items', ItemViewSet, basename='item')
 router.register(r'categories', CategoryViewSet, basename='category')
+router.register(r'users', UserViewSet, basename='user')
+router.register(r'roles', GroupViewSet, basename='role')
+router.register(r'permissions', PermissionViewSet, basename='permission')
 
 urlpatterns = [
     path('', include(router.urls)),

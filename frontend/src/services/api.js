@@ -49,6 +49,17 @@ export const deleteCategory = (id) => api.delete(`/categories/${id}/`);
 export const restoreCategory = (id) => api.post(`/categories/${id}/restore/`);
 export const forceDeleteCategory = (id) => api.delete(`/categories/${id}/force_delete/`);
 
+export const getUsers = () => api.get('/users/');
+export const createUser = (data) => api.post('/users/', data);
+export const updateUser = (id, data) => api.put(`/users/${id}/`, data);
+export const deleteUser = (id) => api.delete(`/users/${id}/`);
+
+export const getRoles = () => api.get('/roles/');
+export const createRole = (data) => api.post('/roles/', data);
+export const updateRole = (id, data) => api.put(`/roles/${id}/`, data);
+export const deleteRole = (id) => api.delete(`/roles/${id}/`);
+export const getPermissions = () => api.get('/permissions/');
+
 export const forgotPassword = (email) => api.post('/auth/forgot-password/', { email });
 export const resetPassword = (email, otp, newPassword) => api.post('/auth/reset-password/', { email, otp, new_password: newPassword });
 

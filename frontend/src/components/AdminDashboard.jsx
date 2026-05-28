@@ -3,11 +3,14 @@ import {
   getItems, createItem, updateItem, deleteItem, uploadImage,
   getDeletedItems, restoreItem, forceDeleteItem,
   getCategories, createCategory, updateCategory, deleteCategory,
-  getDeletedCategories, restoreCategory, forceDeleteCategory
+  getDeletedCategories, restoreCategory, forceDeleteCategory,
+  getUsers, createUser, updateUser, deleteUser,
+  getRoles, createRole, updateRole, deleteRole, getPermissions
 } from '../services/api';
 import {
   LayoutDashboard, ShoppingBag, Tag, ArrowLeft,
-  Plus, Search, Edit2, Trash2, X, AlertCircle, Sparkles, RotateCcw, Trash
+  Plus, Search, Edit2, Trash2, X, AlertCircle, Sparkles, RotateCcw, Trash,
+  Users, Shield, Key
 } from 'lucide-react';
 import './AdminDashboard.css';
 
@@ -53,6 +56,32 @@ function AdminDashboard({ onClose, currentUser }) {
     parent: ''
   });
 
+  // User Management states
+  const [users, setUsers] = useState([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userForm, setUserForm] = useState({
+    first_name: '',
+    email: '',
+    password: '',
+    is_active: true,
+    is_staff: false,
+    is_superuser: false,
+    groups: [] // list of Group IDs assigned
+  });
+
+  // Role and Permission states
+  const [roles, setRoles] = useState([]);
+  const [permissions, setPermissions] = useState([]);
+  const [roleSearch, setRoleSearch] = useState('');
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState(null);
+  const [roleForm, setRoleForm] = useState({
+    name: '',
+    permissions: [] // array of permission IDs
+  });
+
   // Fetch initial data
   useEffect(() => {
     fetchData();
@@ -62,11 +91,23 @@ function AdminDashboard({ onClose, currentUser }) {
     setLoading(true);
     setError('');
     try {
-      const [prodRes, catRes, delCatRes, delProdRes] = await Promise.all([
+      const [prodRes, catRes, delCatRes, delProdRes, userRes, roleRes, permRes] = await Promise.all([
         getItems(),
         getCategories(),
         getDeletedCategories(),
-        getDeletedItems()
+        getDeletedItems(),
+        getUsers().catch(err => {
+          console.error("Lỗi tải danh sách người dùng:", err);
+          return { data: [] };
+        }),
+        getRoles().catch(err => {
+          console.error("Lỗi tải danh sách vai trò:", err);
+          return { data: [] };
+        }),
+        getPermissions().catch(err => {
+          console.error("Lỗi tải danh sách quyền hạn:", err);
+          return { data: [] };
+        })
       ]);
       const mappedProducts = (prodRes.data || []).map(p => {
         if (p.image_url && p.image_url.startsWith('/media/')) {
@@ -84,6 +125,9 @@ function AdminDashboard({ onClose, currentUser }) {
       setCategories(catRes.data || []);
       setDeletedCategories(delCatRes.data || []);
       setDeletedProducts(mappedDeletedProducts);
+      setUsers(userRes.data || []);
+      setRoles(roleRes.data || []);
+      setPermissions(permRes.data || []);
     } catch (err) {
       console.error(err);
       setError('Lỗi khi tải dữ liệu từ server. Vui lòng kiểm tra Docker.');
@@ -429,7 +473,184 @@ function AdminDashboard({ onClose, currentUser }) {
     }
   };
 
+  // --- USER CRUD ---
+
+  const handleOpenUserAdd = () => {
+    setEditingUser(null);
+    setUserForm({
+      first_name: '',
+      email: '',
+      password: '',
+      is_active: true,
+      is_staff: false,
+      is_superuser: false,
+      groups: []
+    });
+    setIsUserModalOpen(true);
+  };
+
+  const handleOpenUserEdit = (user) => {
+    setEditingUser(user);
+    setUserForm({
+      first_name: user.first_name || '',
+      email: user.email,
+      password: '',
+      is_active: user.is_active,
+      is_staff: user.is_staff,
+      is_superuser: user.is_superuser,
+      groups: user.groups || []
+    });
+    setIsUserModalOpen(true);
+  };
+
+  const handleUserSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!userForm.email) {
+      showErrorMessage('Vui lòng điền đầy đủ Email.');
+      return;
+    }
+
+    if (!editingUser && !userForm.password) {
+      showErrorMessage('Vui lòng nhập mật khẩu cho tài khoản mới.');
+      return;
+    }
+
+    const payload = {
+      first_name: userForm.first_name,
+      email: userForm.email,
+      is_active: userForm.is_active,
+      is_staff: userForm.is_staff,
+      is_superuser: userForm.is_superuser,
+      groups: userForm.groups || []
+    };
+
+    if (userForm.password) {
+      payload.password = userForm.password;
+    }
+
+    try {
+      if (editingUser) {
+        if (editingUser.email === currentUser?.email) {
+          if (!userForm.is_active) {
+            showErrorMessage('Bạn không thể tự khóa tài khoản của chính mình.');
+            return;
+          }
+          if (editingUser.is_superuser && !userForm.is_superuser) {
+            showErrorMessage('Bạn không thể tự hạ quyền Super Admin của chính mình.');
+            return;
+          }
+          if (editingUser.is_staff && !userForm.is_staff) {
+            showErrorMessage('Bạn không thể tự hạ quyền Admin của chính mình.');
+            return;
+          }
+        }
+
+        const res = await updateUser(editingUser.id, payload);
+        setUsers(prev => prev.map(u => u.id === editingUser.id ? res.data : u));
+        showSuccessMessage(`Cập nhật tài khoản "${userForm.email}" thành công!`);
+      } else {
+        const res = await createUser(payload);
+        setUsers(prev => [res.data, ...prev]);
+        showSuccessMessage(`Tạo tài khoản "${userForm.email}" thành công!`);
+      }
+      setIsUserModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      const errMsg = err.response?.data?.error || err.response?.data?.email?.[0] || err.response?.data?.username?.[0] || 'Lỗi khi lưu tài khoản. Đảm bảo Email này chưa tồn tại.';
+      showErrorMessage(errMsg);
+    }
+  };
+
+  const handleUserDelete = async (id, email) => {
+    if (email === currentUser?.email) {
+      showErrorMessage('Bạn không thể tự xóa tài khoản của chính mình.');
+      return;
+    }
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa tài khoản "${email}" không?`)) return;
+    try {
+      await deleteUser(id);
+      setUsers(prev => prev.filter(u => u.id !== id));
+      showSuccessMessage(`Đã xóa tài khoản "${email}" thành công.`);
+    } catch (err) {
+      console.error(err);
+      showErrorMessage(err.response?.data?.error || 'Không thể xóa tài khoản này.');
+    }
+  };
+
+  // --- ROLE CRUD ---
+
+  const handleOpenRoleAdd = () => {
+    setEditingRole(null);
+    setRoleForm({
+      name: '',
+      permissions: []
+    });
+    setIsRoleModalOpen(true);
+  };
+
+  const handleOpenRoleEdit = (role) => {
+    setEditingRole(role);
+    setRoleForm({
+      name: role.name,
+      permissions: role.permissions || []
+    });
+    setIsRoleModalOpen(true);
+  };
+
+  const handleRoleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!roleForm.name) {
+      showErrorMessage('Vui lòng nhập tên vai trò.');
+      return;
+    }
+
+    try {
+      if (editingRole) {
+        const res = await updateRole(editingRole.id, roleForm);
+        setRoles(prev => prev.map(r => r.id === editingRole.id ? res.data : r));
+        showSuccessMessage(`Cập nhật vai trò "${roleForm.name}" thành công!`);
+      } else {
+        const res = await createRole(roleForm);
+        setRoles(prev => [...prev, res.data]);
+        showSuccessMessage(`Tạo vai trò "${roleForm.name}" thành công!`);
+      }
+      setIsRoleModalOpen(false);
+      const userRes = await getUsers();
+      setUsers(userRes.data || []);
+    } catch (err) {
+      console.error(err);
+      showErrorMessage(err.response?.data?.error || err.response?.data?.name?.[0] || 'Lỗi khi lưu vai trò.');
+    }
+  };
+
+  const handleRoleDelete = async (id, name) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa vai trò "${name}"?`)) return;
+    try {
+      await deleteRole(id);
+      setRoles(prev => prev.filter(r => r.id !== id));
+      showSuccessMessage(`Đã xóa vai trò "${name}" thành công.`);
+      const userRes = await getUsers();
+      setUsers(userRes.data || []);
+    } catch (err) {
+      console.error(err);
+      showErrorMessage(err.response?.data?.error || 'Không thể xóa vai trò này.');
+    }
+  };
+
   // Filtering
+  const filteredRoles = roles.filter(r =>
+    r.name.toLowerCase().includes(roleSearch.toLowerCase())
+  );
+
+  const filteredUsers = users.filter(u =>
+    (u.first_name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
+    u.email.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
   const filteredProducts = products.filter(p =>
     p.title.toLowerCase().includes(productSearch.toLowerCase()) ||
     p.category.toLowerCase().includes(productSearch.toLowerCase())
@@ -478,6 +699,22 @@ function AdminDashboard({ onClose, currentUser }) {
             <Tag size={18} />
             <span>Quản lý Danh mục</span>
           </button>
+
+          <button
+            className={`admin-nav-item ${activeTab === 'users' ? 'active' : ''}`}
+            onClick={() => setActiveTab('users')}
+          >
+            <Users size={18} />
+            <span>Quản lý Tài khoản</span>
+          </button>
+
+          <button
+            className={`admin-nav-item ${activeTab === 'roles' ? 'active' : ''}`}
+            onClick={() => setActiveTab('roles')}
+          >
+            <Shield size={18} />
+            <span>Quản lý Vai trò</span>
+          </button>
         </nav>
 
         <div className="admin-sidebar-footer">
@@ -500,6 +737,8 @@ function AdminDashboard({ onClose, currentUser }) {
               {activeTab === 'overview' && 'Bảng Tổng quan'}
               {activeTab === 'products' && 'Quản lý danh sách sản phẩm'}
               {activeTab === 'categories' && 'Quản lý danh mục sản phẩm'}
+              {activeTab === 'users' && 'Quản lý tài khoản hội viên'}
+              {activeTab === 'roles' && 'Quản lý vai trò & quyền hạn'}
             </h2>
             <p className="admin-page-subtitle">Hệ thống quản trị bán hàng thời trang cao cấp</p>
           </div>
@@ -564,6 +803,26 @@ function AdminDashboard({ onClose, currentUser }) {
                   </div>
                 </div>
 
+                <div className="admin-stat-card" onClick={() => setActiveTab('users')} style={{ cursor: 'pointer' }}>
+                  <div className="stat-icon-wrapper">
+                    <Users size={24} color="#d1a852" />
+                  </div>
+                  <div>
+                    <h3 className="stat-value">{users.length}</h3>
+                    <p className="stat-label">Tổng người dùng</p>
+                  </div>
+                </div>
+
+                <div className="admin-stat-card" onClick={() => setActiveTab('roles')} style={{ cursor: 'pointer' }}>
+                  <div className="stat-icon-wrapper">
+                    <Shield size={24} color="#d1a852" />
+                  </div>
+                  <div>
+                    <h3 className="stat-value">{roles.length}</h3>
+                    <p className="stat-label">Tổng vai trò</p>
+                  </div>
+                </div>
+
                 <div className="admin-shortcut-card" onClick={() => setActiveTab('products')}>
                   <h4>Thêm sản phẩm mới</h4>
                   <p>Cập nhật thiết kế thời trang độc quyền lên cửa hàng</p>
@@ -573,6 +832,18 @@ function AdminDashboard({ onClose, currentUser }) {
                 <div className="admin-shortcut-card" onClick={() => setActiveTab('categories')}>
                   <h4>Quản lý bộ sưu tập</h4>
                   <p>Tạo các danh mục, bộ sưu tập váy đầm, áo măng tô mới</p>
+                  <span className="shortcut-action">Đi tới quản lý &rarr;</span>
+                </div>
+
+                <div className="admin-shortcut-card" onClick={() => setActiveTab('users')}>
+                  <h4>Quản lý tài khoản</h4>
+                  <p>Xem danh sách tài khoản, khóa hoặc mở khóa người dùng</p>
+                  <span className="shortcut-action">Đi tới quản lý &rarr;</span>
+                </div>
+
+                <div className="admin-shortcut-card" onClick={() => setActiveTab('roles')}>
+                  <h4>Quản lý vai trò & quyền</h4>
+                  <p>Tạo nhóm vai trò mới và định nghĩa chi tiết quyền hạn CRUD</p>
                   <span className="shortcut-action">Đi tới quản lý &rarr;</span>
                 </div>
               </div>
@@ -923,6 +1194,236 @@ function AdminDashboard({ onClose, currentUser }) {
                 )}
               </div>
             )}
+
+            {/* USERS TAB */}
+            {activeTab === 'users' && (
+              <div className="admin-table-section">
+                {/* Horizontal row for Tab label & Add button */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(189, 163, 128, 0.2)', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <button 
+                      type="button"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#bda380',
+                        borderBottom: '2px solid #bda380',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Users size={16} />
+                      Tất cả tài khoản ({users.length})
+                    </button>
+                  </div>
+                  
+                  <button className="admin-btn admin-btn-primary" onClick={handleOpenUserAdd}>
+                    <Plus size={16} />
+                    <span>Thêm tài khoản</span>
+                  </button>
+                </div>
+
+                {/* Search control row */}
+                <div className="table-controls" style={{ marginBottom: '15px' }}>
+                  <div className="search-box-wrapper">
+                    <Search size={16} />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm theo email, họ tên..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Họ và tên</th>
+                        <th>Email / Tên đăng nhập</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tham gia</th>
+                        <th>Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="empty-table-cell">Không tìm thấy tài khoản nào.</td>
+                        </tr>
+                      ) : (
+                        filteredUsers.map(u => {
+                          const isSelf = u.email === currentUser?.email;
+                          let roleBadge = <span className="featured-badge false">Khách hàng</span>;
+                          if (u.is_superuser) {
+                            roleBadge = <span className="featured-badge true" style={{ backgroundColor: 'rgba(209, 168, 82, 0.2)', color: '#d1a852', border: '1px solid #d1a852' }}>Super Admin</span>;
+                          } else if (u.groups_details && u.groups_details.length > 0) {
+                            roleBadge = (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                {u.groups_details.map(g => (
+                                  <span key={g.id} className="featured-badge true" style={{ backgroundColor: 'rgba(52, 152, 219, 0.15)', color: '#3498db', border: '1px solid rgba(52, 152, 219, 0.4)' }}>
+                                    {g.name}
+                                  </span>
+                                ))}
+                              </div>
+                            );
+                          } else if (u.is_staff) {
+                            roleBadge = <span className="featured-badge true" style={{ backgroundColor: 'rgba(52, 152, 219, 0.2)', color: '#3498db', border: '1px solid #3498db' }}>Admin</span>;
+                          }
+                          
+                          return (
+                            <tr key={u.id}>
+                              <td className="table-bold-text">
+                                {u.first_name || '—'} {isSelf && <span style={{ fontSize: '0.75rem', color: '#bda380', fontStyle: 'italic' }}>(Bạn)</span>}
+                              </td>
+                              <td>{u.email}</td>
+                              <td>{roleBadge}</td>
+                              <td>
+                                {u.is_active ? (
+                                  <span className="featured-badge true" style={{ backgroundColor: 'rgba(46, 204, 113, 0.2)', color: '#2ecc71', border: '1px solid #2ecc71' }}>Hoạt động</span>
+                                ) : (
+                                  <span className="featured-badge false" style={{ backgroundColor: 'rgba(231, 76, 60, 0.2)', color: '#e74c3c', border: '1px solid #e74c3c' }}>Bị khóa</span>
+                                )}
+                              </td>
+                              <td style={{ fontSize: '0.85rem', color: '#aaa' }}>
+                                {new Date(u.date_joined).toLocaleDateString('vi-VN')}
+                              </td>
+                              <td>
+                                <div className="table-actions">
+                                  <button className="table-action-btn edit" onClick={() => handleOpenUserEdit(u)} title="Sửa quyền/tài khoản">
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button 
+                                    className="table-action-btn delete" 
+                                    onClick={() => handleUserDelete(u.id, u.email)} 
+                                    title="Xóa tài khoản"
+                                    disabled={isSelf}
+                                    style={isSelf ? { opacity: 0.3, cursor: 'not-allowed' } : {}}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ROLES TAB */}
+            {activeTab === 'roles' && (
+              <div className="admin-table-section">
+                {/* Horizontal row for Tab label & Add button */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(189, 163, 128, 0.2)', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <button 
+                      type="button"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#bda380',
+                        borderBottom: '2px solid #bda380',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Shield size={16} />
+                      Tất cả vai trò ({roles.length})
+                    </button>
+                  </div>
+                  
+                  <button className="admin-btn admin-btn-primary" onClick={handleOpenRoleAdd}>
+                    <Plus size={16} />
+                    <span>Thêm vai trò</span>
+                  </button>
+                </div>
+
+                {/* Search control row */}
+                <div className="table-controls" style={{ marginBottom: '15px' }}>
+                  <div className="search-box-wrapper">
+                    <Search size={16} />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm vai trò..."
+                      value={roleSearch}
+                      onChange={(e) => setRoleSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Tên vai trò</th>
+                        <th>Số lượng thành viên</th>
+                        <th>Quyền hạn được cấp</th>
+                        <th>Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredRoles.length === 0 ? (
+                        <tr>
+                          <td colSpan="4" className="empty-table-cell">Không tìm thấy vai trò nào.</td>
+                        </tr>
+                      ) : (
+                        filteredRoles.map(r => (
+                          <tr key={r.id}>
+                            <td className="table-bold-text">{r.name}</td>
+                            <td>
+                              <span className="category-badge" style={{ backgroundColor: 'rgba(189, 163, 128, 0.1)', color: '#bda380' }}>
+                                {r.user_count} thành viên
+                              </span>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxWidth: '500px' }}>
+                                {r.permissions_details && r.permissions_details.length > 0 ? (
+                                  r.permissions_details.map(p => (
+                                    <span key={p.id} className="featured-badge true" style={{ fontSize: '0.75rem', backgroundColor: 'rgba(255,255,255,0.05)', color: '#ddd', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                      {p.name} ({p.codename})
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span style={{ fontSize: '0.8rem', color: '#888', fontStyle: 'italic' }}>Chưa cấp quyền nào</span>
+                                )}
+                              </div>
+                            </td>
+                            <td>
+                              <div className="table-actions">
+                                <button className="table-action-btn edit" onClick={() => handleOpenRoleEdit(r)} title="Sửa vai trò">
+                                  <Edit2 size={14} />
+                                </button>
+                                <button 
+                                  className="table-action-btn delete" 
+                                  onClick={() => handleRoleDelete(r.id, r.name)} 
+                                  title="Xóa vai trò"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>
@@ -1142,6 +1643,216 @@ function AdminDashboard({ onClose, currentUser }) {
 
               <div className="modal-actions">
                 <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setIsCategoryModalOpen(false)}>
+                  Hủy bỏ
+                </button>
+                <button type="submit" className="admin-btn admin-btn-primary">
+                  Lưu thay đổi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* USER MODAL */}
+      {isUserModalOpen && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal">
+            <div className="modal-header">
+              <h3>{editingUser ? 'Cập Nhật Tài Khoản' : 'Thêm Tài Khoản Mới'}</h3>
+              <button className="modal-close-btn" onClick={() => setIsUserModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleUserSubmit} className="modal-form">
+              <div className="form-group">
+                <label>Họ và tên</label>
+                <input
+                  type="text"
+                  value={userForm.first_name}
+                  onChange={(e) => setUserForm({ ...userForm, first_name: e.target.value })}
+                  placeholder="Ví dụ: Nguyễn Văn A"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Địa chỉ Email / Tên đăng nhập *</label>
+                <input
+                  type="email"
+                  value={userForm.email}
+                  onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                  placeholder="Ví dụ: partner@thekluxury.com"
+                  required
+                  disabled={!!editingUser}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Mật khẩu {editingUser ? '(Để trống nếu không muốn đổi)' : '*'}</label>
+                <input
+                  type="password"
+                  value={userForm.password}
+                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                  placeholder={editingUser ? 'Nhập mật khẩu mới nếu muốn đổi' : 'Nhập mật khẩu tài khoản'}
+                  required={!editingUser}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Gán vai trò (Roles)</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '4px', maxHeight: '150px', overflowY: 'auto', backgroundColor: '#1c1c1c' }}>
+                  {roles.length === 0 ? (
+                    <span style={{ fontSize: '0.8rem', color: '#888', fontStyle: 'italic' }}>Chưa có vai trò nào được tạo</span>
+                  ) : (
+                    roles.map(r => (
+                      <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                          type="checkbox"
+                          id={`user-role-${r.id}`}
+                          checked={userForm.groups?.includes(r.id)}
+                          onChange={(e) => {
+                            const updatedGroups = e.target.checked
+                              ? [...(userForm.groups || []), r.id]
+                              : (userForm.groups || []).filter(gId => gId !== r.id);
+                            setUserForm({ ...userForm, groups: updatedGroups });
+                          }}
+                        />
+                        <label htmlFor={`user-role-${r.id}`} style={{ fontSize: '0.85rem', color: '#eee', cursor: 'pointer' }}>
+                          {r.name}
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '15px 0' }}>
+                <div className="form-checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="is_active"
+                    checked={userForm.is_active}
+                    onChange={(e) => setUserForm({ ...userForm, is_active: e.target.checked })}
+                  />
+                  <label htmlFor="is_active">Tài khoản hoạt động (Active)</label>
+                </div>
+
+                <div className="form-checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="is_staff"
+                    checked={userForm.is_staff}
+                    onChange={(e) => setUserForm({ ...userForm, is_staff: e.target.checked })}
+                  />
+                  <label htmlFor="is_staff">Quyền Admin (Có quyền truy cập Admin Dashboard)</label>
+                </div>
+
+                <div className="form-checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="is_superuser"
+                    checked={userForm.is_superuser}
+                    onChange={(e) => setUserForm({ ...userForm, is_superuser: e.target.checked })}
+                  />
+                  <label htmlFor="is_superuser">Quyền Super Admin (Toàn quyền hệ thống)</label>
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setIsUserModalOpen(false)}>
+                  Hủy bỏ
+                </button>
+                <button type="submit" className="admin-btn admin-btn-primary">
+                  Lưu thay đổi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ROLE MODAL */}
+      {isRoleModalOpen && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal" style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>{editingRole ? 'Cập Nhật Vai Trò' : 'Thêm Vai Trò Mới'}</h3>
+              <button className="modal-close-btn" onClick={() => setIsRoleModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleRoleSubmit} className="modal-form">
+              <div className="form-group">
+                <label>Tên vai trò *</label>
+                <input
+                  type="text"
+                  value={roleForm.name}
+                  onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
+                  placeholder="Ví dụ: Quản lý Sản phẩm"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Phân quyền chi tiết (Permissions)</label>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '10px', 
+                  padding: '12px', 
+                  border: '1px solid rgba(255, 255, 255, 0.1)', 
+                  borderRadius: '6px', 
+                  maxHeight: '300px', 
+                  overflowY: 'auto', 
+                  backgroundColor: '#1c1c1c' 
+                }}>
+                  {permissions.length === 0 ? (
+                    <span style={{ fontSize: '0.85rem', color: '#888', fontStyle: 'italic' }}>Không tải được danh sách quyền từ hệ thống</span>
+                  ) : (
+                    ['item', 'category', 'user', 'group'].map(modelName => {
+                      const modelPerms = permissions.filter(p => p.codename.includes(modelName));
+                      if (modelPerms.length === 0) return null;
+                      
+                      let groupTitle = '';
+                      if (modelName === 'item') groupTitle = 'Quản lý Sản phẩm';
+                      else if (modelName === 'category') groupTitle = 'Quản lý Danh mục';
+                      else if (modelName === 'user') groupTitle = 'Quản lý Tài khoản';
+                      else if (modelName === 'group') groupTitle = 'Quản lý Vai trò';
+
+                      return (
+                        <div key={modelName} style={{ marginBottom: '8px' }}>
+                          <h4 style={{ fontSize: '0.9rem', color: '#d1a852', borderBottom: '1px solid rgba(189,163,128,0.2)', paddingBottom: '4px', marginBottom: '6px' }}>
+                            {groupTitle}
+                          </h4>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            {modelPerms.map(p => (
+                              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <input
+                                  type="checkbox"
+                                  id={`perm-${p.id}`}
+                                  checked={roleForm.permissions?.includes(p.id)}
+                                  onChange={(e) => {
+                                    const updatedPerms = e.target.checked
+                                      ? [...(roleForm.permissions || []), p.id]
+                                      : (roleForm.permissions || []).filter(pId => pId !== p.id);
+                                    setRoleForm({ ...roleForm, permissions: updatedPerms });
+                                  }}
+                                />
+                                <label htmlFor={`perm-${p.id}`} style={{ fontSize: '0.8rem', color: '#ddd', cursor: 'pointer' }}>
+                                  {p.name}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setIsRoleModalOpen(false)}>
                   Hủy bỏ
                 </button>
                 <button type="submit" className="admin-btn admin-btn-primary">
