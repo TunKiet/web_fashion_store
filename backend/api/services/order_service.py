@@ -24,22 +24,6 @@ class OrderService:
     @staticmethod
     @transaction.atomic
     def create_order(user, data):
-        """
-        Tạo đơn hàng mới và tự động xuất kho hàng (Inventory Adjustment).
-        `data` mong đợi cấu trúc:
-        {
-            "name": "...",
-            "phone": "...",
-            "address": "...",
-            "city": "...",
-            "notes": "...",
-            "payment_method": "...",
-            "items": [
-                {"id": 1, "quantity": 2, "selectedSize": "M"},
-                ...
-            ]
-        }
-        """
         items_data = data.get('items', [])
         if not items_data:
             raise ValidationError("Đơn hàng phải chứa ít nhất một sản phẩm.")
@@ -103,9 +87,6 @@ class OrderService:
 
     @staticmethod
     def update_order_status(order_id, status_code):
-        """
-        Cập nhật trạng thái đơn hàng (chỉ Admin).
-        """
         valid_statuses = [choice[0] for choice in Order.STATUS_CHOICES]
         if status_code not in valid_statuses:
             raise ValidationError(f"Trạng thái '{status_code}' không hợp lệ.")

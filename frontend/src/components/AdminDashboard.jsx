@@ -11,9 +11,10 @@ import {
 import {
   LayoutDashboard, ShoppingBag, Tag, ArrowLeft,
   Plus, Search, Edit2, Trash2, X, AlertCircle, Sparkles, RotateCcw, Trash,
-  Users, Shield, Key, Package, ClipboardList, CreditCard, Clock, Eye
+  Users, Shield, Key, Package, ClipboardList, CreditCard, Clock, Eye, FileSpreadsheet
 } from 'lucide-react';
 import './AdminDashboard.css';
+import * as XLSX from 'xlsx';
 
 function AdminDashboard({ onClose, currentUser }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -94,6 +95,9 @@ function AdminDashboard({ onClose, currentUser }) {
   const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportMonth, setExportMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
+  const [exportYear, setExportYear] = useState(String(new Date().getFullYear()));
 
   // Fetch initial data
   useEffect(() => {
@@ -723,6 +727,93 @@ function AdminDashboard({ onClose, currentUser }) {
   const handleOpenOrderDetails = (order) => {
     setSelectedOrderDetails(order);
     setIsOrderModalOpen(true);
+  };
+
+  const handleExportRevenueToExcel = (month, year) => {
+    const selectedMonth = parseInt(month, 10);
+    const selectedYear = parseInt(year, 10);
+
+    // Filter orders matching the selected month and year
+    const filtered = orders.filter(o => {
+      const orderDate = new Date(o.created_at);
+      return (orderDate.getMonth() + 1) === selectedMonth && orderDate.getFullYear() === selectedYear;
+    });
+
+    if (filtered.length === 0) {
+      showErrorMessage(`Không tìm thấy đơn hàng nào trong Tháng ${month}/${year} để xuất báo cáo.`);
+      return;
+    }
+
+    // Format data with Vietnamese column headers
+    const rows = filtered.map(o => {
+      let statusLabel = "Chờ xử lý";
+      if (o.status === "PROCESSING") statusLabel = "Đang xử lý";
+      else if (o.status === "SHIPPING") statusLabel = "Đang giao";
+      else if (o.status === "COMPLETED") statusLabel = "Đã hoàn thành";
+      else if (o.status === "CANCELLED") statusLabel = "Đã hủy";
+
+      return {
+        "Mã Đơn Hàng": `#TK-ORDER-${o.id}`,
+        "Khách Hàng": o.name,
+        "Số Điện Thoại": o.phone,
+        "Ngày Đặt": new Date(o.created_at).toLocaleString('vi-VN'),
+        "Phương Thức": o.payment_method.toUpperCase(),
+        "Tổng Tiền (VNĐ)": parseFloat(o.total_price),
+        "Trạng Thái": statusLabel
+      };
+    });
+
+    // Calculate total revenue (excluding cancelled orders)
+    const totalRevenue = filtered
+      .filter(o => o.status !== 'CANCELLED')
+      .reduce((sum, o) => sum + parseFloat(o.total_price), 0);
+
+    // Add empty row for spacing
+    rows.push({
+      "Mã Đơn Hàng": "",
+      "Khách Hàng": "",
+      "Số Điện Thoại": "",
+      "Ngày Đặt": "",
+      "Phương Thức": "",
+      "Tổng Tiền (VNĐ)": "",
+      "Trạng Thái": ""
+    });
+
+    // Add summary row at the end
+    rows.push({
+      "Mã Đơn Hàng": "TỔNG CỘNG DOANH THU",
+      "Khách Hàng": "(Không tính các đơn hàng đã hủy)",
+      "Số Điện Thoại": "",
+      "Ngày Đặt": "",
+      "Phương Thức": "",
+      "Tổng Tiền (VNĐ)": totalRevenue,
+      "Trạng Thái": ""
+    });
+
+    try {
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, `Doanh Thu T${month}-${year}`);
+
+      // Set column widths for better visual layout
+      const wscols = [
+        { wch: 25 }, // Mã Đơn Hàng / TỔNG CỘNG DOANH THU
+        { wch: 30 }, // Khách Hàng
+        { wch: 15 }, // Số Điện Thoại
+        { wch: 22 }, // Ngày Đặt
+        { wch: 15 }, // Phương Thức
+        { wch: 20 }, // Tổng Tiền (VNĐ)
+        { wch: 15 }  // Trạng Thái
+      ];
+      worksheet['!cols'] = wscols;
+
+      // Save file
+      XLSX.writeFile(workbook, `Bao_cao_doanh_thu_thang_${month}_nam_${year}.xlsx`);
+      showSuccessMessage(`Xuất báo cáo doanh thu tháng ${month}/${year} thành công!`);
+    } catch (err) {
+      console.error("Lỗi xuất Excel:", err);
+      showErrorMessage("Có lỗi xảy ra khi xuất file Excel báo cáo doanh thu.");
+    }
   };
 
   // Filtering
@@ -1833,6 +1924,24 @@ function AdminDashboard({ onClose, currentUser }) {
                       Đã hủy ({orders.filter(o => o.status === 'CANCELLED').length})
                     </button>
                   </div>
+
+                  <button 
+                    type="button"
+                    className="admin-btn admin-btn-primary" 
+                    onClick={() => setIsExportModalOpen(true)}
+                    style={{
+                      backgroundColor: '#27ae60',
+                      borderColor: '#27ae60',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#219653'; e.currentTarget.style.borderColor = '#219653'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#27ae60'; e.currentTarget.style.borderColor = '#27ae60'; }}
+                  >
+                    <FileSpreadsheet size={16} />
+                    <span>Xuất báo cáo Excel</span>
+                  </button>
                 </div>
 
                 {/* Search box */}
@@ -2488,6 +2597,85 @@ function AdminDashboard({ onClose, currentUser }) {
                 </button>
                 <button type="submit" className="admin-btn admin-btn-primary">
                   Lưu thay đổi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EXPORT EXCEL MODAL */}
+      {isExportModalOpen && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal" style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h3>Xuất Báo Cáo Doanh Thu</h3>
+              <button 
+                type="button" 
+                className="modal-close-btn" 
+                onClick={() => setIsExportModalOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleExportRevenueToExcel(exportMonth, exportYear);
+                setIsExportModalOpen(false);
+              }} 
+              className="modal-form"
+            >
+              <p style={{ color: 'var(--admin-text-secondary)', fontSize: '0.9rem', margin: '0 0 10px 0' }}>
+                Chọn tháng và năm để tải file báo cáo doanh thu dưới dạng Excel (.xlsx).
+              </p>
+              
+              <div className="form-group-row">
+                <div className="form-group">
+                  <label>Tháng</label>
+                  <select
+                    value={exportMonth}
+                    onChange={(e) => setExportMonth(e.target.value)}
+                  >
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const m = String(i + 1).padStart(2, '0');
+                      return <option key={m} value={m}>Tháng {m}</option>;
+                    })}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Năm</label>
+                  <select
+                    value={exportYear}
+                    onChange={(e) => setExportYear(e.target.value)}
+                  >
+                    {Array.from({ length: 5 }, (_, i) => {
+                      const y = String(new Date().getFullYear() - i);
+                      return <option key={y} value={y}>Năm {y}</option>;
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button 
+                  type="button" 
+                  className="admin-btn admin-btn-secondary" 
+                  onClick={() => setIsExportModalOpen(false)}
+                >
+                  Hủy bỏ
+                </button>
+                <button 
+                  type="submit" 
+                  className="admin-btn admin-btn-primary"
+                  style={{
+                    backgroundColor: '#27ae60',
+                    borderColor: '#27ae60',
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#219653'; e.currentTarget.style.borderColor = '#219653'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#27ae60'; e.currentTarget.style.borderColor = '#27ae60'; }}
+                >
+                  Tải xuống Excel
                 </button>
               </div>
             </form>
