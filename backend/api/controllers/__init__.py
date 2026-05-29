@@ -5,6 +5,8 @@ from .user_controller import UserViewSet
 from .role_controller import GroupViewSet, PermissionViewSet
 from .favorite_controller import FavoriteViewSet
 from .inventory_controller import InventoryViewSet
+from .order_controller import OrderViewSet
+
 
 
 

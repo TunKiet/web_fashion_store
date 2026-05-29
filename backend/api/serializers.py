@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User, Group, Permission
-from .models import Item, Category
+from .models import Item, Category, Order, OrderItem
 
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -88,4 +88,26 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         if groups is not None:
             instance.groups.set(groups)
-        return instance
+        return instance
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'item', 'title', 'price', 'quantity', 'selected_size']
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+    user_email = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            'id', 'user', 'user_email', 'name', 'phone', 'address', 'city', 'notes',
+            'payment_method', 'total_price', 'status', 'created_at', 'updated_at',
+            'items'
+        ]
+        read_only_fields = ['id', 'user', 'user_email', 'total_price', 'created_at', 'updated_at']
+
+    def get_user_email(self, obj):
+        return obj.user.email if obj.user else ""
+

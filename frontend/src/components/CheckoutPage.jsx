@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CreditCard, CheckCircle, Smartphone, MapPin, Phone, User, Clock, Check, ShieldCheck, Heart } from 'lucide-react';
+import { createOrder } from '../services/api';
+
 
 function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose }) {
   const [shippingInfo, setShippingInfo] = useState({
@@ -62,14 +64,38 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
     }
   };
 
-  const simulatePaymentVerification = () => {
+  const [createdOrderId, setCreatedOrderId] = useState(null);
+
+  const simulatePaymentVerification = async () => {
     setIsVerifying(true);
-    setTimeout(() => {
-      setIsVerifying(false);
+    try {
+      const itemsPayload = cart.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        selectedSize: item.selectedSize || 'M'
+      }));
+
+      const res = await createOrder({
+        name: shippingInfo.name,
+        phone: shippingInfo.phone,
+        address: shippingInfo.address,
+        city: shippingInfo.city,
+        notes: shippingInfo.notes,
+        payment_method: paymentMethod,
+        items: itemsPayload
+      });
+
+      setCreatedOrderId(res.data.id);
       setIsSuccess(true);
-      onClearCart(); // Xóa giỏ hàng khi đặt hàng thành công
-    }, 2000);
+      onClearCart();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Đã xảy ra lỗi khi tạo đơn hàng. Vui lòng thử lại.");
+    } finally {
+      setIsVerifying(false);
+    }
   };
+
 
   const handleConfirmQR = () => {
     setShowQRModal(false);
@@ -131,7 +157,7 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
           <div className="success-order-details">
             <div className="detail-row">
               <span>Mã đơn hàng:</span>
-              <strong style={{ color: 'var(--color-gold)' }}>TK-{Math.floor(100000 + Math.random() * 900000)}</strong>
+              <strong style={{ color: 'var(--color-gold)' }}>TK-ORDER-{createdOrderId || '0000'}</strong>
             </div>
             <div className="detail-row">
               <span>Khách hàng:</span>

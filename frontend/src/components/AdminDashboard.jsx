@@ -5,12 +5,13 @@ import {
   getCategories, createCategory, updateCategory, deleteCategory,
   getDeletedCategories, restoreCategory, forceDeleteCategory,
   getUsers, createUser, updateUser, deleteUser,
-  getRoles, createRole, updateRole, deleteRole, getPermissions
+  getRoles, createRole, updateRole, deleteRole, getPermissions,
+  getOrders, updateOrderStatus, deleteOrder
 } from '../services/api';
 import {
   LayoutDashboard, ShoppingBag, Tag, ArrowLeft,
   Plus, Search, Edit2, Trash2, X, AlertCircle, Sparkles, RotateCcw, Trash,
-  Users, Shield, Key, Package
+  Users, Shield, Key, Package, ClipboardList, CreditCard, Clock, Eye
 } from 'lucide-react';
 import './AdminDashboard.css';
 
@@ -87,6 +88,13 @@ function AdminDashboard({ onClose, currentUser }) {
     permissions: [] // array of permission IDs
   });
 
+  // Order Management states
+  const [orders, setOrders] = useState([]);
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+
   // Fetch initial data
   useEffect(() => {
     fetchData();
@@ -96,7 +104,7 @@ function AdminDashboard({ onClose, currentUser }) {
     setLoading(true);
     setError('');
     try {
-      const [prodRes, catRes, delCatRes, delProdRes, userRes, roleRes, permRes] = await Promise.all([
+      const [prodRes, catRes, delCatRes, delProdRes, userRes, roleRes, permRes, orderRes] = await Promise.all([
         getItems(),
         getCategories(),
         getDeletedCategories(),
@@ -111,6 +119,10 @@ function AdminDashboard({ onClose, currentUser }) {
         }),
         getPermissions().catch(err => {
           console.error("Lỗi tải danh sách quyền hạn:", err);
+          return { data: [] };
+        }),
+        getOrders().catch(err => {
+          console.error("Lỗi tải danh sách đơn hàng:", err);
           return { data: [] };
         })
       ]);
@@ -133,6 +145,7 @@ function AdminDashboard({ onClose, currentUser }) {
       setUsers(userRes.data || []);
       setRoles(roleRes.data || []);
       setPermissions(permRes.data || []);
+      setOrders(orderRes.data || []);
     } catch (err) {
       console.error(err);
       setError('Lỗi khi tải dữ liệu từ server. Vui lòng kiểm tra Docker.');
@@ -676,6 +689,42 @@ function AdminDashboard({ onClose, currentUser }) {
     }
   };
 
+  // --- ORDER CRUD ---
+  const handleOrderStatusUpdate = async (orderId, newStatus) => {
+    try {
+      const res = await updateOrderStatus(orderId, newStatus);
+      setOrders(prev => prev.map(o => o.id === orderId ? res.data : o));
+      showSuccessMessage(`Cập nhật trạng thái đơn hàng #${orderId} thành công!`);
+      if (selectedOrderDetails && selectedOrderDetails.id === orderId) {
+        setSelectedOrderDetails(res.data);
+      }
+    } catch (err) {
+      console.error(err);
+      showErrorMessage(err.response?.data?.error || "Không thể cập nhật trạng thái đơn hàng.");
+    }
+  };
+
+  const handleOrderDelete = async (orderId) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa đơn hàng #${orderId}? Thao tác này không thể hoàn tác!`)) return;
+    try {
+      await deleteOrder(orderId);
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      showSuccessMessage(`Đã xóa đơn hàng #${orderId} thành công.`);
+      if (selectedOrderDetails && selectedOrderDetails.id === orderId) {
+        setIsOrderModalOpen(false);
+        setSelectedOrderDetails(null);
+      }
+    } catch (err) {
+      console.error(err);
+      showErrorMessage(err.response?.data?.error || "Không thể xóa đơn hàng này.");
+    }
+  };
+
+  const handleOpenOrderDetails = (order) => {
+    setSelectedOrderDetails(order);
+    setIsOrderModalOpen(true);
+  };
+
   // Filtering
   const filteredRoles = roles.filter(r =>
     r.name.toLowerCase().includes(roleSearch.toLowerCase())
@@ -695,6 +744,24 @@ function AdminDashboard({ onClose, currentUser }) {
     p.title.toLowerCase().includes(productSearch.toLowerCase()) ||
     p.category.toLowerCase().includes(productSearch.toLowerCase())
   );
+
+  const filteredOrders = orders.filter(o => {
+    const matchesSearch = 
+      String(o.id).includes(orderSearch) ||
+      o.name.toLowerCase().includes(orderSearch.toLowerCase()) ||
+      o.phone.includes(orderSearch) ||
+      (o.user_email || '').toLowerCase().includes(orderSearch.toLowerCase());
+      
+    const matchesStatus = orderStatusFilter === 'ALL' || o.status === orderStatusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalRevenue = orders
+    .filter(o => o.status !== 'CANCELLED')
+    .reduce((sum, o) => sum + parseFloat(o.total_price), 0);
+
+  const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
 
   return (
     <div className="admin-dashboard-container">
@@ -758,6 +825,14 @@ function AdminDashboard({ onClose, currentUser }) {
             <Package size={18} />
             <span>Quản lý Kho</span>
           </button>
+
+          <button
+            className={`admin-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            <ClipboardList size={18} />
+            <span>Quản lý Đơn hàng</span>
+          </button>
         </nav>
 
         <div className="admin-sidebar-footer">
@@ -783,6 +858,7 @@ function AdminDashboard({ onClose, currentUser }) {
               {activeTab === 'users' && 'Quản lý tài khoản hội viên'}
               {activeTab === 'roles' && 'Quản lý vai trò & quyền hạn'}
               {activeTab === 'inventory' && 'Quản lý tồn kho sản phẩm'}
+              {activeTab === 'orders' && 'Quản lý đơn hàng mua sắm'}
             </h2>
             <p className="admin-page-subtitle">Hệ thống quản trị bán hàng thời trang cao cấp</p>
           </div>
@@ -817,7 +893,7 @@ function AdminDashboard({ onClose, currentUser }) {
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
               <div className="admin-overview-grid">
-                <div className="admin-stat-card">
+                <div className="admin-stat-card" onClick={() => setActiveTab('products')} style={{ cursor: 'pointer' }}>
                   <div className="stat-icon-wrapper">
                     <ShoppingBag size={24} color="#d1a852" />
                   </div>
@@ -827,7 +903,7 @@ function AdminDashboard({ onClose, currentUser }) {
                   </div>
                 </div>
 
-                <div className="admin-stat-card">
+                <div className="admin-stat-card" onClick={() => setActiveTab('categories')} style={{ cursor: 'pointer' }}>
                   <div className="stat-icon-wrapper">
                     <Tag size={24} color="#d1a852" />
                   </div>
@@ -837,33 +913,43 @@ function AdminDashboard({ onClose, currentUser }) {
                   </div>
                 </div>
 
-                <div className="admin-stat-card">
-                  <div className="stat-icon-wrapper">
-                    <Sparkles size={24} color="#d1a852" />
-                  </div>
-                  <div>
-                    <h3 className="stat-value">{products.filter(p => p.is_featured).length}</h3>
-                    <p className="stat-label">Sản phẩm nổi bật</p>
-                  </div>
-                </div>
-
                 <div className="admin-stat-card" onClick={() => setActiveTab('users')} style={{ cursor: 'pointer' }}>
                   <div className="stat-icon-wrapper">
                     <Users size={24} color="#d1a852" />
                   </div>
                   <div>
                     <h3 className="stat-value">{users.length}</h3>
-                    <p className="stat-label">Tổng người dùng</p>
+                    <p className="stat-label">Tổng hội viên</p>
                   </div>
                 </div>
 
-                <div className="admin-stat-card" onClick={() => setActiveTab('roles')} style={{ cursor: 'pointer' }}>
+                <div className="admin-stat-card" onClick={() => setActiveTab('orders')} style={{ cursor: 'pointer' }}>
                   <div className="stat-icon-wrapper">
-                    <Shield size={24} color="#d1a852" />
+                    <ClipboardList size={24} color="#d1a852" />
                   </div>
                   <div>
-                    <h3 className="stat-value">{roles.length}</h3>
-                    <p className="stat-label">Tổng vai trò</p>
+                    <h3 className="stat-value">{orders.length}</h3>
+                    <p className="stat-label">Tổng đơn hàng</p>
+                  </div>
+                </div>
+
+                <div className="admin-stat-card" onClick={() => setActiveTab('orders')} style={{ cursor: 'pointer' }}>
+                  <div className="stat-icon-wrapper">
+                    <CreditCard size={24} color="#d1a852" />
+                  </div>
+                  <div>
+                    <h3 className="stat-value">{totalRevenue.toLocaleString('vi-VN')} đ</h3>
+                    <p className="stat-label">Doanh thu bán hàng</p>
+                  </div>
+                </div>
+
+                <div className="admin-stat-card" onClick={() => setActiveTab('orders')} style={{ cursor: 'pointer' }}>
+                  <div className="stat-icon-wrapper">
+                    <Clock size={24} color="#d1a852" />
+                  </div>
+                  <div>
+                    <h3 className="stat-value">{pendingOrdersCount}</h3>
+                    <p className="stat-label">Đơn chờ xử lý</p>
                   </div>
                 </div>
 
@@ -1638,9 +1724,328 @@ function AdminDashboard({ onClose, currentUser }) {
                 </div>
               </div>
             )}
+
+            {/* ORDERS TAB */}
+            {activeTab === 'orders' && (
+              <div className="admin-table-section">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(189, 163, 128, 0.2)', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <button 
+                      type="button"
+                      onClick={() => setOrderStatusFilter('ALL')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: orderStatusFilter === 'ALL' ? '#bda380' : '#888',
+                        borderBottom: orderStatusFilter === 'ALL' ? '2px solid #bda380' : '2px solid transparent',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      Tất cả đơn ({orders.length})
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setOrderStatusFilter('PENDING')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: orderStatusFilter === 'PENDING' ? '#bda380' : '#888',
+                        borderBottom: orderStatusFilter === 'PENDING' ? '2px solid #bda380' : '2px solid transparent',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      Chờ xử lý ({orders.filter(o => o.status === 'PENDING').length})
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setOrderStatusFilter('PROCESSING')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: orderStatusFilter === 'PROCESSING' ? '#bda380' : '#888',
+                        borderBottom: orderStatusFilter === 'PROCESSING' ? '2px solid #bda380' : '2px solid transparent',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      Đang xử lý ({orders.filter(o => o.status === 'PROCESSING').length})
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setOrderStatusFilter('SHIPPING')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: orderStatusFilter === 'SHIPPING' ? '#bda380' : '#888',
+                        borderBottom: orderStatusFilter === 'SHIPPING' ? '2px solid #bda380' : '2px solid transparent',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      Đang giao ({orders.filter(o => o.status === 'SHIPPING').length})
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setOrderStatusFilter('COMPLETED')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: orderStatusFilter === 'COMPLETED' ? '#2ecc71' : '#888',
+                        borderBottom: orderStatusFilter === 'COMPLETED' ? '2px solid #2ecc71' : '2px solid transparent',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      Hoàn thành ({orders.filter(o => o.status === 'COMPLETED').length})
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setOrderStatusFilter('CANCELLED')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: orderStatusFilter === 'CANCELLED' ? '#e74c3c' : '#888',
+                        borderBottom: orderStatusFilter === 'CANCELLED' ? '2px solid #e74c3c' : '2px solid transparent',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      Đã hủy ({orders.filter(o => o.status === 'CANCELLED').length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Search box */}
+                <div className="table-controls" style={{ marginBottom: '15px' }}>
+                  <div className="search-box-wrapper">
+                    <Search size={16} />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm đơn hàng (mã đơn, tên, sđt...)..."
+                      value={orderSearch}
+                      onChange={(e) => setOrderSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Table wrapper */}
+                <div className="table-wrapper">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Số điện thoại</th>
+                        <th>Tổng tiền (VNĐ)</th>
+                        <th>Phương thức</th>
+                        <th>Ngày đặt</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredOrders.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" className="empty-table-cell">Không tìm thấy đơn hàng nào.</td>
+                        </tr>
+                      ) : (
+                        filteredOrders.map(o => {
+                          let statusClass = "order-status-badge pending";
+                          let statusLabel = "Chờ xử lý";
+                          if (o.status === "PROCESSING") {
+                            statusClass = "order-status-badge processing";
+                            statusLabel = "Đang xử lý";
+                          } else if (o.status === "SHIPPING") {
+                            statusClass = "order-status-badge shipping";
+                            statusLabel = "Đang giao";
+                          } else if (o.status === "COMPLETED") {
+                            statusClass = "order-status-badge completed";
+                            statusLabel = "Đã hoàn thành";
+                          } else if (o.status === "CANCELLED") {
+                            statusClass = "order-status-badge cancelled";
+                            statusLabel = "Đã hủy";
+                          }
+
+                          return (
+                            <tr key={o.id}>
+                              <td className="table-code-text" style={{ color: 'var(--color-gold)', fontWeight: 'bold' }}>
+                                #TK-ORDER-{o.id}
+                              </td>
+                              <td className="table-bold-text">{o.name}</td>
+                              <td>{o.phone}</td>
+                              <td style={{ fontWeight: 'bold' }}>{parseFloat(o.total_price).toLocaleString('vi-VN')} đ</td>
+                              <td style={{ textTransform: 'uppercase', fontSize: '0.85rem' }}>{o.payment_method}</td>
+                              <td>{new Date(o.created_at).toLocaleDateString('vi-VN')}</td>
+                              <td>
+                                <span className={statusClass}>{statusLabel}</span>
+                              </td>
+                              <td>
+                                <div className="table-actions">
+                                  <button 
+                                    className="table-action-btn edit" 
+                                    onClick={() => handleOpenOrderDetails(o)}
+                                    title="Xem chi tiết đơn hàng"
+                                  >
+                                    <Eye size={14} />
+                                  </button>
+                                  <button 
+                                    className="table-action-btn delete" 
+                                    onClick={() => handleOrderDelete(o.id)}
+                                    title="Xóa đơn hàng"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>
+
+      {/* ORDER DETAILS MODAL */}
+      {isOrderModalOpen && selectedOrderDetails && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal" style={{ maxWidth: '800px' }}>
+            <div className="modal-header">
+              <h3>Chi tiết Đơn hàng #TK-ORDER-{selectedOrderDetails.id}</h3>
+              <button className="modal-close-btn" onClick={() => setIsOrderModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="modal-body-scrollable" style={{ padding: '20px', maxHeight: '75vh', overflowY: 'auto', textAlign: 'left' }}>
+              
+              {/* Customer info block */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px', backgroundColor: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '6px', border: '1px solid rgba(189,163,128,0.1)' }}>
+                <div>
+                  <h4 style={{ color: 'var(--color-gold)', borderBottom: '1px solid rgba(189,163,128,0.2)', paddingBottom: '6px', marginBottom: '10px', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Thông tin giao hàng
+                  </h4>
+                  <p style={{ margin: '6px 0', fontSize: '0.9rem' }}><strong>Khách hàng:</strong> {selectedOrderDetails.name}</p>
+                  <p style={{ margin: '6px 0', fontSize: '0.9rem' }}><strong>Số điện thoại:</strong> {selectedOrderDetails.phone}</p>
+                  <p style={{ margin: '6px 0', fontSize: '0.9rem' }}><strong>Địa chỉ:</strong> {selectedOrderDetails.address}</p>
+                  <p style={{ margin: '6px 0', fontSize: '0.9rem' }}><strong>Thành phố:</strong> {selectedOrderDetails.city}</p>
+                  <p style={{ margin: '6px 0', fontSize: '0.9rem', wordBreak: 'break-all' }}><strong>Ghi chú:</strong> {selectedOrderDetails.notes || 'Không có ghi chú'}</p>
+                </div>
+                <div>
+                  <h4 style={{ color: 'var(--color-gold)', borderBottom: '1px solid rgba(189,163,128,0.2)', paddingBottom: '6px', marginBottom: '10px', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Chi tiết thanh toán
+                  </h4>
+                  <p style={{ margin: '6px 0', fontSize: '0.9rem' }}><strong>Phương thức:</strong> <span style={{ textTransform: 'uppercase' }}>{selectedOrderDetails.payment_method}</span></p>
+                  <p style={{ margin: '6px 0', fontSize: '0.9rem' }}><strong>Ngày tạo đơn:</strong> {new Date(selectedOrderDetails.created_at).toLocaleString('vi-VN')}</p>
+                  <p style={{ margin: '6px 0', fontSize: '0.9rem' }}><strong>Hội viên:</strong> {selectedOrderDetails.user_email || 'Khách vãng lai'}</p>
+                  
+                  {/* Status update box */}
+                  <div style={{ marginTop: '12px' }}>
+                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '6px', fontSize: '0.85rem', color: '#ccc' }}>
+                      Cập nhật trạng thái đơn:
+                    </label>
+                    <select
+                      value={selectedOrderDetails.status}
+                      onChange={(e) => handleOrderStatusUpdate(selectedOrderDetails.id, e.target.value)}
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: '#111',
+                        color: '#fff',
+                        border: '1px solid var(--color-gold)',
+                        borderRadius: '4px',
+                        width: '100%',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="PENDING">Chờ xử lý (Pending)</option>
+                      <option value="PROCESSING">Đang xử lý (Processing)</option>
+                      <option value="SHIPPING">Đang giao hàng (Shipping)</option>
+                      <option value="COMPLETED">Đã hoàn thành (Completed)</option>
+                      <option value="CANCELLED">Đã hủy (Cancelled)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <h4 style={{ color: 'var(--color-gold)', marginBottom: '12px', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Danh sách sản phẩm mua</h4>
+              <div className="table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Sản phẩm</th>
+                      <th>Kích cỡ</th>
+                      <th>Giá tiền</th>
+                      <th>Số lượng</th>
+                      <th>Thành tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedOrderDetails.items && selectedOrderDetails.items.map(itm => (
+                      <tr key={itm.id}>
+                        <td className="table-bold-text">{itm.title}</td>
+                        <td><span className="category-badge">{itm.selected_size}</span></td>
+                        <td>{parseFloat(itm.price).toLocaleString('vi-VN')} đ</td>
+                        <td>{itm.quantity}</td>
+                        <td style={{ fontWeight: 'bold', color: 'var(--color-gold)' }}>
+                          {(parseFloat(itm.price) * itm.quantity).toLocaleString('vi-VN')} đ
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Final totals block */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '15px' }}>
+                <div style={{ minWidth: '250px', textAlign: 'right' }}>
+                  <p style={{ margin: '4px 0', fontSize: '0.9rem' }}>
+                    Tạm tính: {selectedOrderDetails.items?.reduce((s, i) => s + parseFloat(i.price)*i.quantity, 0).toLocaleString('vi-VN')} đ
+                  </p>
+                  <p style={{ margin: '4px 0', fontSize: '0.9rem' }}>
+                    Phí vận chuyển: {parseFloat(selectedOrderDetails.total_price) > 30000000 ? 'Miễn phí' : '35.000 đ'}
+                  </p>
+                  <h3 style={{ margin: '8px 0 0 0', color: 'var(--color-gold)', fontSize: '1.4rem' }}>
+                    Tổng cộng: {parseFloat(selectedOrderDetails.total_price).toLocaleString('vi-VN')} đ
+                  </h3>
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '15px 20px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="admin-btn admin-btn-secondary" onClick={() => setIsOrderModalOpen(false)}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PRODUCT MODAL */}
       {isProductModalOpen && (

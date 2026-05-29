@@ -72,4 +72,10 @@ export const toggleFavoriteApi = (itemId) => api.post('/favorites/toggle/', { it
 export const getInventoryLogs = () => api.get('/inventory/');
 export const createInventoryAdjustment = (data) => api.post('/inventory/', data);
 
+export const getOrders = () => api.get('/orders/');
+export const createOrder = (data) => api.post('/orders/', data);
+export const updateOrderStatus = (id, status) => api.put(`/orders/${id}/`, { status });
+export const deleteOrder = (id) => api.delete(`/orders/${id}/`);
+
+
 export default api;

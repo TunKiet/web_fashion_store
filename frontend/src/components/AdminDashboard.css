@@ -870,3 +870,46 @@
   color: var(--admin-text-secondary);
   font-size: 0.85rem;
 }
+
+/* ORDER STATUS BADGES */
+.order-status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  display: inline-block;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.order-status-badge.pending {
+  background-color: rgba(209, 168, 82, 0.1);
+  color: var(--admin-gold);
+  border: 1px solid rgba(209, 168, 82, 0.25);
+}
+
+.order-status-badge.processing {
+  background-color: rgba(0, 112, 224, 0.1);
+  color: #3b97ff;
+  border: 1px solid rgba(0, 112, 224, 0.25);
+}
+
+.order-status-badge.shipping {
+  background-color: rgba(230, 126, 34, 0.1);
+  color: #e67e22;
+  border: 1px solid rgba(230, 126, 34, 0.25);
+}
+
+.order-status-badge.completed {
+  background-color: rgba(52, 168, 83, 0.1);
+  color: var(--admin-success);
+  border: 1px solid rgba(52, 168, 83, 0.25);
+}
+
+.order-status-badge.cancelled {
+  background-color: rgba(234, 67, 37, 0.1);
+  color: var(--admin-danger);
+  border: 1px solid rgba(234, 67, 37, 0.25);
+}
+
