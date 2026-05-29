@@ -2825,6 +2825,11 @@
   padding-left: 4px;
 }
 
+.confirm-modal-cancel-btn:hover {
+  border-color: var(--color-black) !important;
+  background-color: var(--color-bg-soft) !important;
+}
+
 
 
 

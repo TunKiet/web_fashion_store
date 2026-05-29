@@ -8,6 +8,7 @@ class Item(models.Model):
     category = models.CharField(max_length=100, default="Uncategorized")
     is_featured = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
+    stock = models.IntegerField(default=10)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

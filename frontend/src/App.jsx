@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getItems, getCategories } from './services/api';
+import { getItems, getCategories, getFavorites, toggleFavoriteApi } from './services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import './App.css';
@@ -17,6 +17,7 @@ import AuthModal from './components/AuthModal';
 import AdminDashboard from './components/AdminDashboard';
 import UserProfile from './components/UserProfile';
 import CheckoutPage from './components/CheckoutPage';
+import ConfirmModal from './components/ConfirmModal';
 
 // Fallback sản phẩm cao cấp tiếng Việt khi không kết nối được Django API
 const FALLBACK_PRODUCTS = [
@@ -94,6 +95,7 @@ function App() {
   const [selectedSize, setSelectedSize] = useState('M');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isConfirmLogoutOpen, setIsConfirmLogoutOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState('store'); // 'store' or 'admin'
@@ -121,12 +123,33 @@ function App() {
     const savedUser = localStorage.getItem('the_k_luxury_user');
     if (savedUser) {
       try {
-        setCurrentUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        setCurrentUser(parsed);
+        if (parsed.favorites) {
+          setFavorites(parsed.favorites);
+        }
       } catch (e) {
         console.error(e);
       }
     }
   }, []);
+
+  // Tải danh sách yêu thích từ database khi đăng nhập
+  useEffect(() => {
+    if (currentUser) {
+      getFavorites()
+        .then(res => {
+          if (res.data) {
+            setFavorites(res.data);
+          }
+        })
+        .catch(err => {
+          console.error("Lỗi khi tải danh sách yêu thích:", err);
+        });
+    } else {
+      setFavorites([]);
+    }
+  }, [currentUser]);
 
   // Redirect non-admins out of admin view
   useEffect(() => {
@@ -147,10 +170,29 @@ function App() {
     localStorage.setItem('the_k_luxury_user', JSON.stringify(userData));
   };
 
-  const handleLogout = () => {
+  const performLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('the_k_luxury_user');
     setView('store');
+  };
+
+  const handleLogout = () => {
+    if (cart.length > 0) {
+      setIsConfirmLogoutOpen(true);
+    } else {
+      performLogout();
+    }
+  };
+
+  const handleConfirmLogoutPay = () => {
+    setIsConfirmLogoutOpen(false);
+    setView('checkout');
+  };
+
+  const handleConfirmLogoutNoPay = () => {
+    setIsConfirmLogoutOpen(false);
+    setCart([]);
+    performLogout();
   };
 
   const fetchProducts = () => {
@@ -257,23 +299,26 @@ function App() {
 
   // Đánh dấu sản phẩm yêu thích (Toggle Favorite)
   const toggleFavorite = (productId) => {
-    // ==========================================
-    // CHÚ THÍCH KẾT NỐI BACKEND (AUTHENTICATION GATEWAY):
-    // Thay thế logic này bằng một POST request gửi tới Backend Django API để lưu sản phẩm yêu thích.
-    // Ví dụ: axios.post('/api/wishlist/toggle/', { item_id: productId }, { headers: { Authorization: `Bearer ${token}` } })
-    // ==========================================
     if (!currentUser) {
       alert('Vui lòng đăng nhập để lưu sản phẩm yêu thích.');
       setIsAuthOpen(true);
       return;
     }
-    // ==========================================
 
-    setFavorites(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
+    toggleFavoriteApi(productId)
+      .then(res => {
+        setFavorites(prev => {
+          const exists = prev.includes(productId);
+          if (res.data.is_favorite) {
+            return exists ? prev : [...prev, productId];
+          } else {
+            return prev.filter(id => id !== productId);
+          }
+        });
+      })
+      .catch(err => {
+        console.error("Lỗi khi cập nhật yêu thích:", err);
+      });
   };
 
   // Mở modal chi tiết sản phẩm
@@ -809,6 +854,19 @@ function App() {
             isOpen={isAuthOpen}
             onClose={() => setIsAuthOpen(false)}
             onAuthSuccess={handleAuthSuccess}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* CONFIRM LOGOUT MODAL */}
+      <AnimatePresence>
+        {isConfirmLogoutOpen && (
+          <ConfirmModal
+            isOpen={isConfirmLogoutOpen}
+            onClose={() => setIsConfirmLogoutOpen(false)}
+            onConfirm={handleConfirmLogoutPay}
+            onCancel={handleConfirmLogoutNoPay}
+            message="Bạn đang có các sản phẩm chưa thanh toán trong giỏ hàng. Bạn có muốn tiến hành thanh toán ngay không?"
           />
         )}
       </AnimatePresence>

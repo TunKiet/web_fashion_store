@@ -66,4 +66,10 @@ export const resetPassword = (email, otp, newPassword) => api.post('/auth/reset-
 export const loginUser = (email, password) => api.post('/auth/login/', { email, password });
 export const registerUser = (name, email, password) => api.post('/auth/register/', { name, email, password });
 
+export const getFavorites = () => api.get('/favorites/');
+export const toggleFavoriteApi = (itemId) => api.post('/favorites/toggle/', { item_id: itemId });
+
+export const getInventoryLogs = () => api.get('/inventory/');
+export const createInventoryAdjustment = (data) => api.post('/inventory/', data);
+
 export default api;

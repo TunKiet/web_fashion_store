@@ -10,7 +10,7 @@ import {
 import {
   LayoutDashboard, ShoppingBag, Tag, ArrowLeft,
   Plus, Search, Edit2, Trash2, X, AlertCircle, Sparkles, RotateCcw, Trash,
-  Users, Shield, Key
+  Users, Shield, Key, Package
 } from 'lucide-react';
 import './AdminDashboard.css';
 
@@ -45,8 +45,13 @@ function AdminDashboard({ onClose, currentUser }) {
     price: '',
     image_url: '',
     category: '',
-    is_featured: false
+    is_featured: false,
+    stock: 10
   });
+
+  // Inventory Management states
+  const [editingStockId, setEditingStockId] = useState(null);
+  const [tempStockValue, setTempStockValue] = useState(0);
 
   // Category Form fields
   const [categoryForm, setCategoryForm] = useState({
@@ -201,7 +206,8 @@ function AdminDashboard({ onClose, currentUser }) {
       price: '',
       image_url: '',
       category: categories.length > 0 ? categories[0].name : 'Uncategorized',
-      is_featured: false
+      is_featured: false,
+      stock: 10
     });
     setIsProductModalOpen(true);
   };
@@ -214,7 +220,8 @@ function AdminDashboard({ onClose, currentUser }) {
       price: product.price,
       image_url: product.image_url,
       category: product.category,
-      is_featured: product.is_featured
+      is_featured: product.is_featured,
+      stock: product.stock !== undefined ? product.stock : 10
     });
     setIsProductModalOpen(true);
   };
@@ -358,6 +365,34 @@ function AdminDashboard({ onClose, currentUser }) {
       showErrorMessage('Không thể xóa vĩnh viễn sản phẩm này.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // --- INVENTORY STOCK MANAGEMENT ---
+  const handleStartEditStock = (id, currentStock) => {
+    setEditingStockId(id);
+    setTempStockValue(currentStock);
+  };
+
+  const handleSaveStock = async (id) => {
+    try {
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+      const dataToSend = { ...product, stock: tempStockValue };
+      if (dataToSend.image_url && dataToSend.image_url.startsWith('http://localhost:8000/media/')) {
+        dataToSend.image_url = dataToSend.image_url.replace('http://localhost:8000', '');
+      }
+      const res = await updateItem(id, dataToSend);
+      let updatedProd = res.data;
+      if (updatedProd.image_url && updatedProd.image_url.startsWith('/media/')) {
+        updatedProd.image_url = `http://localhost:8000${updatedProd.image_url}`;
+      }
+      setProducts(prev => prev.map(p => p.id === id ? updatedProd : p));
+      setEditingStockId(null);
+      showSuccessMessage(`Cập nhật tồn kho cho sản phẩm "${product.title}" thành công!`);
+    } catch (err) {
+      console.error(err);
+      showErrorMessage('Lỗi khi cập nhật số lượng tồn kho.');
     }
   };
 
@@ -715,6 +750,14 @@ function AdminDashboard({ onClose, currentUser }) {
             <Shield size={18} />
             <span>Quản lý Vai trò</span>
           </button>
+
+          <button
+            className={`admin-nav-item ${activeTab === 'inventory' ? 'active' : ''}`}
+            onClick={() => setActiveTab('inventory')}
+          >
+            <Package size={18} />
+            <span>Quản lý Kho</span>
+          </button>
         </nav>
 
         <div className="admin-sidebar-footer">
@@ -739,6 +782,7 @@ function AdminDashboard({ onClose, currentUser }) {
               {activeTab === 'categories' && 'Quản lý danh mục sản phẩm'}
               {activeTab === 'users' && 'Quản lý tài khoản hội viên'}
               {activeTab === 'roles' && 'Quản lý vai trò & quyền hạn'}
+              {activeTab === 'inventory' && 'Quản lý tồn kho sản phẩm'}
             </h2>
             <p className="admin-page-subtitle">Hệ thống quản trị bán hàng thời trang cao cấp</p>
           </div>
@@ -1424,6 +1468,176 @@ function AdminDashboard({ onClose, currentUser }) {
                 </div>
               </div>
             )}
+
+            {/* INVENTORY TAB */}
+            {activeTab === 'inventory' && (
+              <div className="admin-table-section">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(189, 163, 128, 0.2)', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <button 
+                      type="button"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#bda380',
+                        borderBottom: '2px solid #bda380',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Package size={16} />
+                      Quản lý Tồn Kho ({products.length} mặt hàng)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Search control row */}
+                <div className="table-controls" style={{ marginBottom: '15px' }}>
+                  <div className="search-box-wrapper">
+                    <Search size={16} />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm sản phẩm trong kho..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Hình ảnh</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Mã SP</th>
+                        <th>Danh mục</th>
+                        <th>Số lượng kho</th>
+                        <th>Trạng thái tồn kho</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredProducts.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="empty-table-cell">Không tìm thấy sản phẩm nào.</td>
+                        </tr>
+                      ) : (
+                        filteredProducts.map(p => {
+                          const isEditingStock = editingStockId === p.id;
+                          const currentStock = p.stock !== undefined ? p.stock : 10;
+                          
+                          // Trạng thái kho badge
+                          let stockBadge = <span className="featured-badge true" style={{ backgroundColor: 'rgba(46, 204, 113, 0.2)', color: '#2ecc71', border: '1px solid #2ecc71' }}>Còn hàng</span>;
+                          if (currentStock === 0) {
+                            stockBadge = <span className="featured-badge false" style={{ backgroundColor: 'rgba(231, 76, 60, 0.2)', color: '#e74c3c', border: '1px solid #e74c3c' }}>Hết hàng</span>;
+                          } else if (currentStock <= 5) {
+                            stockBadge = <span className="featured-badge true" style={{ backgroundColor: 'rgba(230, 126, 34, 0.2)', color: '#e67e22', border: '1px solid #e67e22' }}>Sắp hết hàng</span>;
+                          }
+
+                          return (
+                            <tr key={p.id}>
+                              <td>
+                                <img
+                                  src={p.image_url || "/images/fashion_dress.png"}
+                                  alt={p.title}
+                                  className="table-thumbnail"
+                                  onError={(e) => { e.target.src = "/images/fashion_dress.png"; }}
+                                />
+                              </td>
+                              <td className="table-bold-text">{p.title}</td>
+                              <td className="table-code-text">#{p.id}</td>
+                              <td><span className="category-badge">{p.category}</span></td>
+                              <td>
+                                {isEditingStock ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <input
+                                      type="number"
+                                      value={tempStockValue}
+                                      onChange={(e) => setTempStockValue(Math.max(0, parseInt(e.target.value) || 0))}
+                                      style={{
+                                        width: '70px',
+                                        padding: '6px 8px',
+                                        border: '1px solid var(--color-gold)',
+                                        borderRadius: '4px',
+                                        backgroundColor: '#1c1c1c',
+                                        color: '#fff',
+                                        outline: 'none',
+                                        fontSize: '0.85rem'
+                                      }}
+                                      min="0"
+                                      autoFocus
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSaveStock(p.id)}
+                                      style={{
+                                        color: '#2ecc71',
+                                        cursor: 'pointer',
+                                        padding: '4px',
+                                        border: '1px solid rgba(46, 204, 113, 0.4)',
+                                        borderRadius: '4px',
+                                        background: 'rgba(46, 204, 113, 0.1)',
+                                        display: 'inline-flex',
+                                        fontWeight: 'bold'
+                                      }}
+                                      title="Lưu"
+                                    >
+                                      ✓
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingStockId(null)}
+                                      style={{
+                                        color: '#e74c3c',
+                                        cursor: 'pointer',
+                                        padding: '4px',
+                                        border: '1px solid rgba(231, 76, 60, 0.4)',
+                                        borderRadius: '4px',
+                                        background: 'rgba(231, 76, 60, 0.1)',
+                                        display: 'inline-flex',
+                                        fontWeight: 'bold'
+                                      }}
+                                      title="Hủy"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span style={{ fontWeight: '600', fontSize: '0.95rem' }}>{currentStock}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStartEditStock(p.id, currentStock)}
+                                      style={{
+                                        color: '#bda380',
+                                        cursor: 'pointer',
+                                        padding: '4px',
+                                        border: '1px solid rgba(189, 163, 128, 0.3)',
+                                        borderRadius: '4px',
+                                        background: 'rgba(189, 163, 128, 0.05)',
+                                        display: 'inline-flex'
+                                      }}
+                                      title="Chỉnh sửa số lượng"
+                                    >
+                                      <Edit2 size={10} />
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                              <td>{stockBadge}</td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>
@@ -1547,6 +1761,18 @@ function AdminDashboard({ onClose, currentUser }) {
                   onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                   placeholder="Nhập mô tả chất liệu, thiết kế..."
                   rows="4"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Số lượng tồn kho *</label>
+                <input
+                  type="number"
+                  value={productForm.stock}
+                  onChange={(e) => setProductForm({ ...productForm, stock: Math.max(0, parseInt(e.target.value) || 0) })}
+                  placeholder="Ví dụ: 10"
+                  min="0"
+                  required
                 />
               </div>
 

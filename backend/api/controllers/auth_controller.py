@@ -112,12 +112,15 @@ def login(request):
 
     try:
         user, token_key = AuthService.login_user(email, password)
+        from api.services import FavoriteService
+        favorites = FavoriteService.get_user_favorites(user)
         return Response({
             "token": token_key,
             "email": user.email,
             "name": user.first_name or user.username,
             "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
+            "favorites": favorites,
         }, status=status.HTTP_200_OK)
     except ValidationError as e:
         error_msg = e.messages[0] if hasattr(e, 'messages') else str(e)

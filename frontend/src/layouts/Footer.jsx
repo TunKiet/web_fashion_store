@@ -13,7 +13,7 @@ function Footer({ categories = [], setActiveCategory }) {
             <h4>Cửa Hàng</h4>
             <ul className="footer-links-list">
               <li className="footer-link-item">
-                <a 
+                <a
                   href="#shop-grid"
                   onClick={(e) => {
                     e.preventDefault();
@@ -27,7 +27,7 @@ function Footer({ categories = [], setActiveCategory }) {
               </li>
               {categories.map(c => (
                 <li key={c.id} className="footer-link-item">
-                  <a 
+                  <a
                     href="#shop-grid"
                     onClick={(e) => {
                       e.preventDefault();
@@ -55,10 +55,10 @@ function Footer({ categories = [], setActiveCategory }) {
             <h4>Bản Tin</h4>
             <p>Đăng ký nhận quyền tiếp cận sớm các bộ sưu tập mới và sự kiện thời trang đặc quyền.</p>
             <form className="newsletter-form" onSubmit={(e) => { e.preventDefault(); alert("Cảm ơn bạn đã đăng ký nhận bản tin đặc quyền của chúng tôi."); }}>
-              <input 
-                type="email" 
-                placeholder="Nhập email của bạn" 
-                className="newsletter-input" 
+              <input
+                type="email"
+                placeholder="Nhập email của bạn"
+                className="newsletter-input"
                 required
               />
               <button type="submit" className="newsletter-btn">Đăng Ký</button>
@@ -69,9 +69,7 @@ function Footer({ categories = [], setActiveCategory }) {
         <div className="footer-bottom">
           <p>&copy; {new Date().getFullYear()} The K Luxury. Bảo lưu mọi quyền.</p>
           <div className="footer-socials">
-            <a href="#instagram" className="social-link">Instagram</a>
-            <a href="#pinterest" className="social-link">Pinterest</a>
-            <a href="#journal" className="social-link">Tạp Chí</a>
+            <a href="#instagram" className="social-link">Make By TUAN KIET</a>
           </div>
         </div>
       </div>
