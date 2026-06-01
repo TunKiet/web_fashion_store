@@ -445,6 +445,25 @@ function App() {
   const indexOfFirstNewsItem = indexOfLastNewsItem - NEWS_ITEMS_PER_PAGE;
   const currentNewsItems = news.slice(indexOfFirstNewsItem, indexOfLastNewsItem);
 
+  // Lọc sản phẩm nổi bật cho trang chủ (hỗ trợ cả boolean, string và numeric từ API)
+  const featuredProducts = products.filter(p => 
+    (p.is_featured === true || 
+     p.is_featured === 'true' || 
+     p.is_featured === 1 || 
+     p.is_featured === '1') && 
+    !p.is_deleted
+  );
+
+  // Tạo danh sách lặp lại để đủ số lượng hiển thị mượt mà không bị hụt ở cuối màn hình (tối thiểu 16 sản phẩm)
+  let marqueeProducts = [];
+  if (featuredProducts.length > 0) {
+    const repeatCount = Math.max(4, Math.ceil(16 / featuredProducts.length));
+    for (let i = 0; i < repeatCount; i++) {
+      marqueeProducts = [...marqueeProducts, ...featuredProducts];
+    }
+  }
+
+
 
   if (view === 'checkout') {
     return (
@@ -671,6 +690,69 @@ function App() {
           }
           return <Hero />;
         })()
+      )}
+
+      {/* FEATURED PRODUCTS SECTION */}
+      {activeCategory === 'ALL' && featuredProducts.length > 0 && (
+        <section className="featured-section" style={{
+          padding: '60px 0',
+          background: 'linear-gradient(to bottom, #0a0a0a 0%, #111111 100%)',
+          borderBottom: '1px solid rgba(189, 163, 128, 0.15)',
+          overflow: 'hidden'
+        }}>
+          <div>
+            <div className="section-header" style={{ marginBottom: '40px', textAlign: 'center' }}>
+              <span style={{ 
+                color: '#d1a852', 
+                fontSize: '0.8rem', 
+                textTransform: 'uppercase', 
+                letterSpacing: '3px',
+                fontWeight: '600',
+                display: 'block',
+                marginBottom: '8px'
+              }}>
+                Kiệt Tác Thiết Kế
+              </span>
+              <h2 className="section-title" style={{ 
+                fontSize: '2rem', 
+                fontFamily: 'var(--font-serif, serif)',
+                fontWeight: '300',
+                color: '#fff',
+                position: 'relative',
+                display: 'inline-block',
+                paddingBottom: '12px',
+                margin: 0
+              }}>
+                Sản Phẩm Nổi Bật
+                <span style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '60px',
+                  height: '1px',
+                  backgroundColor: '#d1a852'
+                }}></span>
+              </h2>
+            </div>
+            
+            <div className="featured-marquee-wrapper">
+              <div className="featured-marquee-track">
+                {marqueeProducts.map((product, idx) => (
+                  <ProductCard
+                    key={`featured-${product.id}-${idx}`}
+                    product={product}
+                    onOpenDetails={openProductDetails}
+                    onAddToCart={addToCart}
+                    isFavorite={favorites.includes(product.id)}
+                    onToggleFavorite={toggleFavorite}
+                    onSelectCategory={setActiveCategory}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* SHOP SECTION */}

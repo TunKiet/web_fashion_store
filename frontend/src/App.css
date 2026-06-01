@@ -2830,6 +2830,72 @@
   background-color: var(--color-bg-soft) !important;
 }
 
+/* ==========================================
+   Featured Products Marquee Styles
+   ========================================== */
+.featured-marquee-wrapper {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  padding: 20px 0;
+  display: flex;
+}
+
+.featured-marquee-wrapper::before,
+.featured-marquee-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 150px;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.featured-marquee-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, #0a0a0a 0%, transparent 100%);
+}
+
+.featured-marquee-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, #111111 0%, transparent 100%);
+}
+
+.featured-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 30px;
+  animation: marquee-right 35s linear infinite;
+}
+
+.featured-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-right {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Custom dimensions for items inside the featured products marquee (246x460) */
+.featured-marquee-track .product-card {
+  width: 246px !important;
+  height: 460px !important;
+  flex-shrink: 0;
+}
+
+.featured-marquee-track .product-card .product-image-sec {
+  flex: 1;
+  aspect-ratio: auto !important;
+}
+
+
+
 
 
 
