@@ -106,12 +106,13 @@ def login(request):
     """
     email = request.data.get('email', '').strip()
     password = request.data.get('password', '')
+    code = request.data.get('code')
 
     if not email or not password:
         return Response({"error": "Vui lòng nhập địa chỉ Email và Mật khẩu."}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        user, token_key = AuthService.login_user(email, password)
+        user, token_key = AuthService.login_user(email, password, code)
         from api.services import FavoriteService
         favorites = FavoriteService.get_user_favorites(user)
         return Response({
@@ -124,5 +125,7 @@ def login(request):
         }, status=status.HTTP_200_OK)
     except ValidationError as e:
         error_msg = e.messages[0] if hasattr(e, 'messages') else str(e)
+        if error_msg == "2fa_required":
+            return Response({"require_2fa": True}, status=status.HTTP_200_OK)
         return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
 

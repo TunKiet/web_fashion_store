@@ -7,6 +7,7 @@ from .favorite_controller import FavoriteViewSet
 from .inventory_controller import InventoryViewSet
 from .order_controller import OrderViewSet
 from .news_controller import get_fashion_news
+from .voucher_controller import VoucherViewSet
 
 
 

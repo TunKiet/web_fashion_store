@@ -59,8 +59,70 @@ class AuthService:
         )
         return user
 
+    @classmethod
+    def send_2fa_login_otp(cls, user):
+        import random
+        from api.models import OTP
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        otp_code = f"{random.randint(100000, 999999)}"
+        OTP.objects.filter(email=user.email, is_used=False).update(is_used=True)
+        OTP.objects.create(email=user.email, otp=otp_code)
+
+        subject = "[The K Luxury] Mã xác thực 2FA đăng nhập"
+        message = (
+            f"Chào {user.first_name or user.username or 'quý khách'},\n\n"
+            f"Có một yêu cầu đăng nhập vào tài khoản của bạn tại The K Luxury yêu cầu xác thực 2 lớp.\n"
+            f"Mã OTP xác thực 2FA của bạn là: {otp_code}\n"
+            f"Mã này có hiệu lực trong vòng 5 phút.\n\n"
+            f"Nếu bạn không thực hiện yêu cầu này, vui lòng đổi mật khẩu ngay lập tức để bảo vệ tài khoản.\n\n"
+            f"Trân trọng,\nThe K Luxury Editorial Team."
+        )
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@thekluxury.com')
+        send_mail(subject, message, from_email, [user.email], fail_silently=False)
+
+    @classmethod
+    def send_2fa_setup_otp(cls, user):
+        import random
+        from api.models import OTP
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        otp_code = f"{random.randint(100000, 999999)}"
+        OTP.objects.filter(email=user.email, is_used=False).update(is_used=True)
+        OTP.objects.create(email=user.email, otp=otp_code)
+
+        subject = "[The K Luxury] Mã OTP xác nhận cấu hình 2FA"
+        message = (
+            f"Chào {user.first_name or user.username or 'quý khách'},\n\n"
+            f"Bạn đang thực hiện thay đổi cài đặt bảo mật Xác thực 2 lớp (2FA) cho tài khoản tại The K Luxury.\n"
+            f"Mã OTP xác nhận của bạn là: {otp_code}\n"
+            f"Mã này có hiệu lực trong vòng 5 phút.\n\n"
+            f"Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.\n\n"
+            f"Trân trọng,\nThe K Luxury Editorial Team."
+        )
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@thekluxury.com')
+        send_mail(subject, message, from_email, [user.email], fail_silently=False)
+
     @staticmethod
-    def login_user(email, password):
+    def verify_2fa_otp(email, code):
+        from api.models import OTP
+        otp_record = OTP.objects.filter(email=email, is_used=False).first()
+        if not otp_record or otp_record.otp != code:
+            return False
+        
+        if otp_record.is_expired():
+            otp_record.is_used = True
+            otp_record.save()
+            return False
+
+        otp_record.is_used = True
+        otp_record.save()
+        return True
+
+    @classmethod
+    def login_user(cls, email, password, code=None):
         user = authenticate(username=email, password=password)
         if user is None:
             user_by_email = User.objects.filter(email=email).first()
@@ -72,6 +134,17 @@ class AuthService:
 
         if not user.is_active:
             raise ValidationError("Tài khoản của bạn đã bị vô hiệu hóa.")
+
+        # Kiểm tra Xác thực 2 lớp (2FA)
+        from api.models.user_2fa import User2FA
+        two_factor = User2FA.objects.filter(user=user, is_enabled=True).first()
+        if two_factor:
+            if not code:
+                cls.send_2fa_login_otp(user)
+                raise ValidationError("2fa_required")
+            
+            if not cls.verify_2fa_otp(user.email, code):
+                raise ValidationError("Mã xác thực 2FA không chính xác.")
 
         token, _ = Token.objects.get_or_create(user=user)
         return user, token.key

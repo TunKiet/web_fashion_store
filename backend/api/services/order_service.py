@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from api.models import Order, OrderItem, Item
+from api.models import Order, OrderItem, Item, Voucher, VoucherUsage
 from api.services.inventory_service import InventoryService
 from api.services.momo_service import MomoService
 
@@ -46,11 +46,32 @@ class OrderService:
             subtotal += Decimal(str(product.price)) * qty
             resolved_items.append((product, qty, size))
 
-        # 2. Tính toán phí vận chuyển (Trị giá đơn > 30 triệu thì miễn phí, ngược lại 35.000đ)
-        shipping_fee = Decimal('0.00') if subtotal > Decimal('30000000.00') else Decimal('35000.00')
-        total_price = subtotal + shipping_fee
+        # 2. Xử lý Voucher / Mã giảm giá
+        voucher_code = data.get('voucher_code', '').strip()
+        voucher = None
+        discount_amount = Decimal('0.00')
 
-        # 3. Tạo bản ghi đơn hàng
+        if voucher_code:
+            try:
+                voucher = Voucher.objects.get(code__iexact=voucher_code)
+                is_valid, msg = voucher.is_valid(subtotal)
+                if not is_valid:
+                    raise ValidationError(msg)
+                
+                # Tính số tiền được giảm
+                discount_amount = Decimal(str(voucher.calculate_discount(subtotal)))
+            except Voucher.DoesNotExist:
+                raise ValidationError("Mã giảm giá không tồn tại.")
+
+        # 3. Tính toán phí vận chuyển (Trị giá đơn > 30 triệu thì miễn phí, ngược lại 35.000đ)
+        shipping_fee = Decimal('0.00') if subtotal > Decimal('30000000.00') else Decimal('35000.00')
+        
+        # Tổng tiền sau khi áp dụng giảm giá
+        total_price = subtotal - discount_amount + shipping_fee
+        if total_price < Decimal('0.00'):
+            total_price = Decimal('0.00')
+
+        # 4. Tạo bản ghi đơn hàng
         payment_method = data.get('payment_method', 'cod').strip()
         order = Order.objects.create(
             user=user,
@@ -61,8 +82,21 @@ class OrderService:
             notes=data.get('notes', '').strip(),
             payment_method=payment_method,
             total_price=total_price,
+            discount_amount=discount_amount,
+            voucher=voucher,
             status='PENDING'
         )
+
+        # Nếu dùng voucher, tăng số lượt sử dụng và ghi nhận lịch sử sử dụng
+        if voucher:
+            voucher.used_count += 1
+            voucher.save()
+            
+            VoucherUsage.objects.create(
+                user=user,
+                voucher=voucher,
+                order=order
+            )
 
         # 4. Tạo chi tiết đơn hàng và thực hiện trừ kho
         for product, qty, size in resolved_items:

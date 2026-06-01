@@ -6,5 +6,8 @@ from .inventory_log import InventoryLog
 from .order import Order
 from .order_item import OrderItem
 from .news_item import NewsItem
+from .user_2fa import User2FA
+from .voucher import Voucher, VoucherUsage
+
 
 

@@ -518,6 +518,10 @@ function App() {
         onClose={() => setView('store')}
         onLogout={handleLogout}
         onOpenAdmin={() => setView('admin')}
+        onUpdateSuccess={(updatedUser) => {
+          setCurrentUser(updatedUser);
+          localStorage.setItem('the_k_luxury_user', JSON.stringify(updatedUser));
+        }}
       />
     );
   }

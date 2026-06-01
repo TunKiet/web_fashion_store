@@ -6,13 +6,14 @@ import {
   getDeletedCategories, restoreCategory, forceDeleteCategory,
   getUsers, createUser, updateUser, deleteUser,
   getRoles, createRole, updateRole, deleteRole, getPermissions,
-  getOrders, updateOrderStatus, deleteOrder
+  getOrders, updateOrderStatus, deleteOrder,
+  getVouchers, createVoucher, updateVoucher, deleteVoucher
 } from '../services/api';
 import {
   LayoutDashboard, ShoppingBag, Tag, ArrowLeft,
   Plus, Search, Edit2, Trash2, X, AlertCircle, Sparkles, RotateCcw, Trash,
   Users, Shield, Key, Package, ClipboardList, CreditCard, Clock, Eye, FileSpreadsheet,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Ticket
 } from 'lucide-react';
 import './AdminDashboard.css';
 import * as XLSX from 'xlsx';
@@ -103,10 +104,27 @@ function AdminDashboard({ onClose, currentUser }) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportMonth, setExportMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
   const [exportYear, setExportYear] = useState(String(new Date().getFullYear()));
+
+  // Voucher Management states
+  const [vouchers, setVouchers] = useState([]);
+  const [voucherSearch, setVoucherSearch] = useState('');
+  const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
+  const [editingVoucher, setEditingVoucher] = useState(null);
+  const [voucherForm, setVoucherForm] = useState({
+    code: '',
+    discount_type: 'percentage', // 'percentage' or 'fixed'
+    discount_value: '',
+    min_order_value: '0',
+    valid_from: '',
+    valid_to: '',
+    is_active: true,
+    usage_limit: ''
+  });
+
   // Reset page when switching tabs or changing search queries
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, productsTab, categoriesTab, orderStatusFilter, productSearch, userSearch, roleSearch, orderSearch]);
+  }, [activeTab, productsTab, categoriesTab, orderStatusFilter, productSearch, userSearch, roleSearch, orderSearch, voucherSearch]);
 
   // Fetch initial data
   useEffect(() => {
@@ -117,7 +135,7 @@ function AdminDashboard({ onClose, currentUser }) {
     setLoading(true);
     setError('');
     try {
-      const [prodRes, catRes, delCatRes, delProdRes, userRes, roleRes, permRes, orderRes] = await Promise.all([
+      const [prodRes, catRes, delCatRes, delProdRes, userRes, roleRes, permRes, orderRes, voucherRes] = await Promise.all([
         getItems(),
         getCategories(),
         getDeletedCategories(),
@@ -136,6 +154,10 @@ function AdminDashboard({ onClose, currentUser }) {
         }),
         getOrders().catch(err => {
           console.error("Lỗi tải danh sách đơn hàng:", err);
+          return { data: [] };
+        }),
+        getVouchers().catch(err => {
+          console.error("Lỗi tải danh sách mã giảm giá:", err);
           return { data: [] };
         })
       ]);
@@ -159,6 +181,7 @@ function AdminDashboard({ onClose, currentUser }) {
       setRoles(roleRes.data || []);
       setPermissions(permRes.data || []);
       setOrders(orderRes.data || []);
+      setVouchers(voucherRes.data || []);
     } catch (err) {
       console.error(err);
       setError('Lỗi khi tải dữ liệu từ server. Vui lòng kiểm tra Docker.');
@@ -738,6 +761,103 @@ function AdminDashboard({ onClose, currentUser }) {
     setIsOrderModalOpen(true);
   };
 
+  // Voucher CRUD handlers
+  const handleOpenVoucherAdd = () => {
+    setEditingVoucher(null);
+    setVoucherForm({
+      code: '',
+      discount_type: 'percentage',
+      discount_value: '',
+      min_order_value: '0',
+      valid_from: new Date().toISOString().substring(0, 16),
+      valid_to: '',
+      is_active: true,
+      is_public: true,
+      usage_limit: ''
+    });
+    setIsVoucherModalOpen(true);
+  };
+
+  const handleOpenVoucherEdit = (v) => {
+    setEditingVoucher(v);
+    setVoucherForm({
+      code: v.code,
+      discount_type: v.discount_type,
+      discount_value: v.discount_value,
+      min_order_value: v.min_order_value,
+      valid_from: v.valid_from ? new Date(v.valid_from).toISOString().substring(0, 16) : '',
+      valid_to: v.valid_to ? new Date(v.valid_to).toISOString().substring(0, 16) : '',
+      is_active: v.is_active,
+      is_public: v.is_public ?? true,
+      usage_limit: v.usage_limit ?? ''
+    });
+    setIsVoucherModalOpen(true);
+  };
+
+  const handleVoucherSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!voucherForm.code || !voucherForm.discount_value || !voucherForm.valid_to) {
+      showErrorMessage('Vui lòng nhập đầy đủ mã, giá trị giảm và hạn sử dụng.');
+      return;
+    }
+
+    const payload = {
+      code: voucherForm.code.toUpperCase().trim(),
+      discount_type: voucherForm.discount_type,
+      discount_value: parseFloat(voucherForm.discount_value),
+      min_order_value: parseFloat(voucherForm.min_order_value || 0),
+      valid_from: voucherForm.valid_from ? new Date(voucherForm.valid_from).toISOString() : new Date().toISOString(),
+      valid_to: new Date(voucherForm.valid_to).toISOString(),
+      is_active: voucherForm.is_active,
+      is_public: voucherForm.is_public,
+      usage_limit: voucherForm.usage_limit ? parseInt(voucherForm.usage_limit) : null
+    };
+
+    try {
+      if (editingVoucher) {
+        const res = await updateVoucher(editingVoucher.id, payload);
+        setVouchers(prev => prev.map(v => v.id === editingVoucher.id ? res.data : v));
+        showSuccessMessage(`Cập nhật mã giảm giá "${payload.code}" thành công!`);
+      } else {
+        const res = await createVoucher(payload);
+        setVouchers(prev => [res.data, ...prev]);
+        showSuccessMessage(`Thêm mã giảm giá "${payload.code}" thành công!`);
+      }
+      setIsVoucherModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      let errorMsg = 'Không thể lưu mã giảm giá. Vui lòng kiểm tra lại thông tin.';
+      if (err.response?.data) {
+        if (typeof err.response.data === 'object') {
+          const errors = [];
+          for (const [key, value] of Object.entries(err.response.data)) {
+            const fieldName = key === 'code' ? 'Mã' : key === 'discount_value' ? 'Giá trị giảm' : key === 'valid_to' ? 'Hạn sử dụng' : key === 'min_order_value' ? 'Đơn tối thiểu' : key;
+            errors.push(`${fieldName}: ${Array.isArray(value) ? value.join(', ') : value}`);
+          }
+          errorMsg = errors.join(' | ');
+        } else if (typeof err.response.data === 'string') {
+          errorMsg = err.response.data;
+        }
+      }
+      showErrorMessage(errorMsg);
+    }
+  };
+
+  const handleVoucherDelete = async (id) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa mã giảm giá này không?')) {
+      try {
+        await deleteVoucher(id);
+        setVouchers(prev => prev.filter(v => v.id !== id));
+        showSuccessMessage('Xóa mã giảm giá thành công!');
+      } catch (err) {
+        console.error(err);
+        showErrorMessage('Không thể xóa mã giảm giá.');
+      }
+    }
+  };
+
   const handleExportRevenueToExcel = (month, year) => {
     const selectedMonth = parseInt(month, 10);
     const selectedYear = parseInt(year, 10);
@@ -888,6 +1008,12 @@ function AdminDashboard({ onClose, currentUser }) {
   const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
   const totalPagesOrders = Math.ceil(filteredOrders.length / itemsPerPage);
 
+  const filteredVouchers = vouchers.filter(v =>
+    v.code.toLowerCase().includes(voucherSearch.toLowerCase())
+  );
+  const paginatedVouchers = filteredVouchers.slice(startIndex, endIndex);
+  const totalPagesVouchers = Math.ceil(filteredVouchers.length / itemsPerPage);
+
   // Pagination UI Helper
   const renderPagination = (totalItems, totalPages) => {
     if (totalPages <= 1) return null;
@@ -993,6 +1119,14 @@ function AdminDashboard({ onClose, currentUser }) {
             <ClipboardList size={18} />
             <span>Quản lý Đơn hàng</span>
           </button>
+
+          <button
+            className={`admin-nav-item ${activeTab === 'vouchers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('vouchers')}
+          >
+            <Ticket size={18} />
+            <span>Quản lý Voucher</span>
+          </button>
         </nav>
 
         <div className="admin-sidebar-footer">
@@ -1019,6 +1153,7 @@ function AdminDashboard({ onClose, currentUser }) {
               {activeTab === 'roles' && 'Quản lý vai trò & quyền hạn'}
               {activeTab === 'inventory' && 'Quản lý tồn kho sản phẩm'}
               {activeTab === 'orders' && 'Quản lý đơn hàng mua sắm'}
+              {activeTab === 'vouchers' && 'Quản lý mã giảm giá (Vouchers)'}
             </h2>
             <p className="admin-page-subtitle">Hệ thống quản trị bán hàng thời trang cao cấp</p>
           </div>
@@ -2115,6 +2250,125 @@ function AdminDashboard({ onClose, currentUser }) {
                 {renderPagination(filteredOrders.length, totalPagesOrders)}
               </div>
             )}
+
+            {/* VOUCHERS TAB */}
+            {activeTab === 'vouchers' && (
+              <div className="admin-table-section">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(189, 163, 128, 0.2)', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <button 
+                      type="button"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#bda380',
+                        borderBottom: '2px solid #bda380',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Ticket size={16} />
+                      Kho mã giảm giá ({vouchers.length})
+                    </button>
+                  </div>
+                  
+                  <button className="admin-btn admin-btn-primary" onClick={handleOpenVoucherAdd}>
+                    <Plus size={16} />
+                    <span>Thêm voucher mới</span>
+                  </button>
+                </div>
+
+                <div className="table-controls" style={{ marginBottom: '15px' }}>
+                  <div className="search-box-wrapper">
+                    <Search size={16} />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm theo mã..."
+                      value={voucherSearch}
+                      onChange={(e) => setVoucherSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Mã giảm giá</th>
+                        <th>Loại giảm giá</th>
+                        <th>Giá trị</th>
+                        <th>Đơn tối thiểu</th>
+                        <th>Lượt giới hạn</th>
+                        <th>Đã dùng</th>
+                        <th>Hiệu lực</th>
+                        <th>Đối tượng</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedVouchers.length === 0 ? (
+                        <tr>
+                          <td colSpan="10" style={{ textAlign: 'center', padding: '20px', color: '#888' }}>
+                            Không tìm thấy mã giảm giá nào
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedVouchers.map(v => {
+                          return (
+                            <tr key={v.id}>
+                              <td style={{ fontWeight: 'bold', color: 'var(--color-gold)' }}>{v.code}</td>
+                              <td>{v.discount_type === 'percentage' ? 'Phần trăm (%)' : 'Cố định (đ)'}</td>
+                              <td>
+                                {v.discount_type === 'percentage' 
+                                  ? `${parseFloat(v.discount_value)}%` 
+                                  : `${parseFloat(v.discount_value).toLocaleString('vi-VN')} đ`
+                                }
+                              </td>
+                              <td>{parseFloat(v.min_order_value).toLocaleString('vi-VN')} đ</td>
+                              <td>{v.usage_limit ?? 'Không giới hạn'}</td>
+                              <td>{v.used_count}</td>
+                              <td style={{ fontSize: '0.85rem', color: '#aaa' }}>
+                                {new Date(v.valid_from).toLocaleDateString('vi-VN')} - {new Date(v.valid_to).toLocaleDateString('vi-VN')}
+                              </td>
+                              <td>
+                                {v.is_public ? (
+                                  <span className="featured-badge true" style={{ backgroundColor: 'rgba(52, 152, 219, 0.15)', color: '#3498db', border: '1px solid rgba(52, 152, 219, 0.4)' }}>Toàn bộ</span>
+                                ) : (
+                                  <span className="featured-badge false" style={{ backgroundColor: 'rgba(136, 136, 136, 0.15)', color: '#888', border: '1px solid rgba(136, 136, 136, 0.4)' }}>Riêng tư</span>
+                                )}
+                              </td>
+                              <td>
+                                {v.is_active ? (
+                                  <span className="featured-badge true" style={{ backgroundColor: 'rgba(46, 204, 113, 0.2)', color: '#2ecc71', border: '1px solid #2ecc71' }}>Kích hoạt</span>
+                                ) : (
+                                  <span className="featured-badge false" style={{ backgroundColor: 'rgba(231, 76, 60, 0.2)', color: '#e74c3c', border: '1px solid #e74c3c' }}>Tắt</span>
+                                )}
+                              </td>
+                              <td>
+                                <div className="table-actions">
+                                  <button className="table-action-btn edit" onClick={() => handleOpenVoucherEdit(v)} title="Sửa">
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button className="table-action-btn delete" onClick={() => handleVoucherDelete(v.id)} title="Xóa">
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {renderPagination(filteredVouchers.length, totalPagesVouchers)}
+              </div>
+            )}
           </>
         )}
       </main>
@@ -2756,6 +3010,131 @@ function AdminDashboard({ onClose, currentUser }) {
                   onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#27ae60'; e.currentTarget.style.borderColor = '#27ae60'; }}
                 >
                   Tải xuống Excel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* VOUCHER MODAL */}
+      {isVoucherModalOpen && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal">
+            <div className="modal-header">
+              <h3>{editingVoucher ? 'Cập Nhật Voucher' : 'Thêm Voucher Mới'}</h3>
+              <button className="modal-close-btn" onClick={() => setIsVoucherModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleVoucherSubmit} className="modal-form">
+              <div className="form-group">
+                <label>Mã giảm giá *</label>
+                <input
+                  type="text"
+                  value={voucherForm.code}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, code: e.target.value.toUpperCase() })}
+                  placeholder="Ví dụ: KLUXURY20"
+                  required
+                  style={{ textTransform: 'uppercase' }}
+                />
+              </div>
+
+              <div className="form-group-row">
+                <div className="form-group">
+                  <label>Loại giảm giá</label>
+                  <select
+                    value={voucherForm.discount_type}
+                    onChange={(e) => setVoucherForm({ ...voucherForm, discount_type: e.target.value })}
+                  >
+                    <option value="percentage">Phần trăm (%)</option>
+                    <option value="fixed">Số tiền cố định (đ)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Giá trị giảm *</label>
+                  <input
+                    type="number"
+                    value={voucherForm.discount_value}
+                    onChange={(e) => setVoucherForm({ ...voucherForm, discount_value: e.target.value })}
+                    placeholder={voucherForm.discount_type === 'percentage' ? 'Ví dụ: 15' : 'Ví dụ: 200000'}
+                    required
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group-row">
+                <div className="form-group">
+                  <label>Giá trị đơn hàng tối thiểu *</label>
+                  <input
+                    type="number"
+                    value={voucherForm.min_order_value}
+                    onChange={(e) => setVoucherForm({ ...voucherForm, min_order_value: e.target.value })}
+                    placeholder="Ví dụ: 1000000"
+                    required
+                    min="0"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Giới hạn số lần sử dụng (Trống = Vô hạn)</label>
+                  <input
+                    type="number"
+                    value={voucherForm.usage_limit}
+                    onChange={(e) => setVoucherForm({ ...voucherForm, usage_limit: e.target.value })}
+                    placeholder="Ví dụ: 100"
+                    min="1"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group-row">
+                <div className="form-group">
+                  <label>Hiệu lực từ ngày *</label>
+                  <input
+                    type="datetime-local"
+                    value={voucherForm.valid_from}
+                    onChange={(e) => setVoucherForm({ ...voucherForm, valid_from: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Hiệu lực đến ngày *</label>
+                  <input
+                    type="datetime-local"
+                    value={voucherForm.valid_to}
+                    onChange={(e) => setVoucherForm({ ...voucherForm, valid_to: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                <input
+                  type="checkbox"
+                  id="is_active_voucher"
+                  checked={voucherForm.is_active}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, is_active: e.target.checked })}
+                />
+                <label htmlFor="is_active_voucher" style={{ cursor: 'pointer', margin: 0 }}>Voucher hoạt động (Active)</label>
+              </div>
+
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: '5px' }}>
+                <input
+                  type="checkbox"
+                  id="is_public_voucher"
+                  checked={voucherForm.is_public}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, is_public: e.target.checked })}
+                />
+                <label htmlFor="is_public_voucher" style={{ cursor: 'pointer', margin: 0 }}>Thêm voucher cho toàn bộ người dùng (Hiển thị ở Kho Voucher)</label>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setIsVoucherModalOpen(false)}>
+                  Hủy bỏ
+                </button>
+                <button type="submit" className="admin-btn admin-btn-primary">
+                  {editingVoucher ? 'Cập nhật' : 'Thêm mới'}
                 </button>
               </div>
             </form>

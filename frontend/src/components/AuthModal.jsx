@@ -18,6 +18,10 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [forgotState, setForgotState] = useState('none');
   const [otp, setOtp] = useState('');
 
+  // 2FA state
+  const [require2FA, setRequire2FA] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
@@ -71,9 +75,20 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     }
 
     // Luồng đăng nhập / đăng ký thực tế
-    if (!email || !password) {
-      setError('Vui lòng điền đầy đủ các trường thông tin bắt buộc.');
-      return;
+    if (require2FA) {
+      if (!twoFactorCode) {
+        setError('Vui lòng nhập mã xác thực 2FA.');
+        return;
+      }
+      if (twoFactorCode.length !== 6) {
+        setError('Mã xác thực 2FA phải gồm 6 chữ số.');
+        return;
+      }
+    } else {
+      if (!email || !password) {
+        setError('Vui lòng điền đầy đủ các trường thông tin bắt buộc.');
+        return;
+      }
     }
 
     if (!isLogin) {
@@ -104,8 +119,16 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     } else {
       setIsLoading(true);
       try {
-        const response = await loginUser(email, password);
+        const response = await loginUser(email, password, require2FA ? twoFactorCode : undefined);
         setIsLoading(false);
+
+        if (response.data.require_2fa) {
+          setRequire2FA(true);
+          setError('');
+          setMessage('Tài khoản của bạn đã được kích hoạt xác thực 2 lớp. Vui lòng nhập mã bảo mật 6 số được gửi đến email đăng ký của bạn.');
+          return;
+        }
+
         const userData = {
           email: response.data.email,
           name: response.data.name,
@@ -132,6 +155,8 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     setError('');
     setMessage('');
     setForgotState('none');
+    setRequire2FA(false);
+    setTwoFactorCode('');
   };
 
   const toggleAuthMode = () => {
@@ -163,9 +188,10 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           <div className="auth-header">
             <h2 className="auth-brand">The K Luxury</h2>
             <p className="auth-subtitle">
-              {forgotState === 'email' && 'Khôi phục mật khẩu hội viên'}
-              {forgotState === 'otp' && 'Nhập mã xác thực OTP'}
-              {forgotState === 'none' && (isLogin ? 'Đăng nhập vào đặc quyền hội viên' : 'Trở thành hội viên thượng lưu')}
+              {require2FA && 'Nhập mã xác thực bảo mật 2FA'}
+              {!require2FA && forgotState === 'email' && 'Khôi phục mật khẩu hội viên'}
+              {!require2FA && forgotState === 'otp' && 'Nhập mã xác thực OTP'}
+              {!require2FA && forgotState === 'none' && (isLogin ? 'Đăng nhập vào đặc quyền hội viên' : 'Trở thành hội viên thượng lưu')}
             </p>
           </div>
 
@@ -186,155 +212,108 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           )}
 
           <form onSubmit={handleSubmit} className="auth-form">
-            {forgotState === 'email' && (
+            {require2FA ? (
               <div className="auth-input-group">
-                <label className="auth-input-label">Địa chỉ Email của bạn</label>
+                <label className="auth-input-label">Mã xác thực bảo mật 2FA (6 chữ số)</label>
                 <div className="auth-input-wrapper">
-                  <Mail size={16} className="auth-input-icon" />
+                  <Key size={16} className="auth-input-icon" />
                   <input 
-                    type="email" 
-                    placeholder="your.email@example.com" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)}
+                    type="text" 
+                    placeholder="000000" 
+                    maxLength={6}
+                    value={twoFactorCode} 
+                    onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
                     className="auth-input"
+                    style={{ letterSpacing: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '16px' }}
                     required
+                    autoFocus
                   />
                 </div>
+                <div style={{ marginTop: '10px', fontSize: '11px', textAlign: 'left' }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>Không nhận được mã? </span>
+                  <button 
+                    type="button" 
+                    onClick={async () => {
+                      setError('');
+                      setMessage('');
+                      setIsLoading(true);
+                      try {
+                        await loginUser(email, password);
+                        setIsLoading(false);
+                        setMessage('Mã xác thực mới đã được gửi thành công đến email của bạn.');
+                      } catch (err) {
+                        setIsLoading(false);
+                        setError(err.response?.data?.error || 'Không thể gửi lại mã xác thực. Vui lòng thử lại.');
+                      }
+                    }} 
+                    disabled={isLoading}
+                    style={{ background: 'none', border: 'none', color: 'var(--color-gold)', textDecoration: 'underline', padding: 0, cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    Gửi lại mã
+                  </button>
+                </div>
               </div>
-            )}
-
-            {forgotState === 'otp' && (
+            ) : (
               <>
-                <div className="auth-input-group">
-                  <label className="auth-input-label">Mã xác thực OTP (6 chữ số)</label>
-                  <div className="auth-input-wrapper">
-                    <Key size={16} className="auth-input-icon" />
-                    <input 
-                      type="text" 
-                      placeholder="123456" 
-                      maxLength={6}
-                      value={otp} 
-                      onChange={(e) => setOtp(e.target.value)}
-                      className="auth-input"
-                      required
-                    />
+                {forgotState === 'email' && (
+                  <div className="auth-input-group">
+                    <label className="auth-input-label">Địa chỉ Email của bạn</label>
+                    <div className="auth-input-wrapper">
+                      <Mail size={16} className="auth-input-icon" />
+                      <input 
+                        type="email" 
+                        placeholder="your.email@example.com" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="auth-input"
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="auth-input-group">
-                  <label className="auth-input-label">Mật khẩu mới</label>
-                  <div className="auth-input-wrapper">
-                    <Lock size={16} className="auth-input-icon" />
-                    <input 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="••••••••" 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="auth-input"
-                      required
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="auth-password-toggle"
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="auth-input-group">
-                  <label className="auth-input-label">Xác nhận mật khẩu mới</label>
-                  <div className="auth-input-wrapper">
-                    <Lock size={16} className="auth-input-icon" />
-                    <input 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="••••••••" 
-                      value={confirmPassword} 
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="auth-input"
-                      required
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {forgotState === 'none' && (
-              <>
-                <AnimatePresence mode="wait">
-                  {!isLogin && (
-                    <motion.div 
-                      key="name-field"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="auth-input-group"
-                    >
-                      <label className="auth-input-label">Họ và Tên</label>
+                {forgotState === 'otp' && (
+                  <>
+                    <div className="auth-input-group">
+                      <label className="auth-input-label">Mã xác thực OTP (6 chữ số)</label>
                       <div className="auth-input-wrapper">
-                        <User size={16} className="auth-input-icon" />
+                        <Key size={16} className="auth-input-icon" />
                         <input 
                           type="text" 
-                          placeholder="Nguyễn Văn A" 
-                          value={name} 
-                          onChange={(e) => setName(e.target.value)}
+                          placeholder="123456" 
+                          maxLength={6}
+                          value={otp} 
+                          onChange={(e) => setOtp(e.target.value)}
                           className="auth-input"
+                          required
                         />
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </div>
 
-                <div className="auth-input-group">
-                  <label className="auth-input-label">Địa chỉ Email</label>
-                  <div className="auth-input-wrapper">
-                    <Mail size={16} className="auth-input-icon" />
-                    <input 
-                      type="email" 
-                      placeholder="your.email@example.com" 
-                      value={email} 
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="auth-input"
-                      required
-                    />
-                  </div>
-                </div>
+                    <div className="auth-input-group">
+                      <label className="auth-input-label">Mật khẩu mới</label>
+                      <div className="auth-input-wrapper">
+                        <Lock size={16} className="auth-input-icon" />
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          value={password} 
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="auth-input"
+                          required
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="auth-password-toggle"
+                        >
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
 
-                <div className="auth-input-group">
-                  <label className="auth-input-label">Mật khẩu</label>
-                  <div className="auth-input-wrapper">
-                    <Lock size={16} className="auth-input-icon" />
-                    <input 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="••••••••" 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="auth-input"
-                      required
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="auth-password-toggle"
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                <AnimatePresence mode="wait">
-                  {!isLogin && (
-                    <motion.div 
-                      key="confirm-password-field"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="auth-input-group"
-                    >
-                      <label className="auth-input-label">Xác nhận Mật khẩu</label>
+                    <div className="auth-input-group">
+                      <label className="auth-input-label">Xác nhận mật khẩu mới</label>
                       <div className="auth-input-wrapper">
                         <Lock size={16} className="auth-input-icon" />
                         <input 
@@ -346,16 +325,108 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                           required
                         />
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </div>
+                  </>
+                )}
 
-                {isLogin && (
-                  <div className="auth-forgot-password">
-                    <a href="#forgot" onClick={(e) => { e.preventDefault(); setForgotState('email'); }}>
-                      Quên mật khẩu?
-                    </a>
-                  </div>
+                {forgotState === 'none' && (
+                  <>
+                    <AnimatePresence mode="wait">
+                      {!isLogin && (
+                        <motion.div 
+                          key="name-field"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="auth-input-group"
+                        >
+                          <label className="auth-input-label">Họ và Tên</label>
+                          <div className="auth-input-wrapper">
+                            <User size={16} className="auth-input-icon" />
+                            <input 
+                              type="text" 
+                              placeholder="Nguyễn Văn A" 
+                              value={name} 
+                              onChange={(e) => setName(e.target.value)}
+                              className="auth-input"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <div className="auth-input-group">
+                      <label className="auth-input-label">Địa chỉ Email</label>
+                      <div className="auth-input-wrapper">
+                        <Mail size={16} className="auth-input-icon" />
+                        <input 
+                          type="email" 
+                          placeholder="your.email@example.com" 
+                          value={email} 
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="auth-input"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="auth-input-group">
+                      <label className="auth-input-label">Mật khẩu</label>
+                      <div className="auth-input-wrapper">
+                        <Lock size={16} className="auth-input-icon" />
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          value={password} 
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="auth-input"
+                          required
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="auth-password-toggle"
+                        >
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                      {!isLogin && (
+                        <motion.div 
+                          key="confirm-password-field"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="auth-input-group"
+                        >
+                          <label className="auth-input-label">Xác nhận Mật khẩu</label>
+                          <div className="auth-input-wrapper">
+                            <Lock size={16} className="auth-input-icon" />
+                            <input 
+                              type={showPassword ? "text" : "password"} 
+                              placeholder="••••••••" 
+                              value={confirmPassword} 
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              className="auth-input"
+                              required
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {isLogin && (
+                      <div className="auth-forgot-password">
+                        <a href="#forgot" onClick={(e) => { e.preventDefault(); setForgotState('email'); }}>
+                          Quên mật khẩu?
+                        </a>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -366,6 +437,7 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               disabled={isLoading}
             >
               {isLoading ? 'Đang Xử Lý...' : (
+                require2FA ? 'Xác Nhận & Đăng Nhập' :
                 forgotState === 'email' ? 'Gửi Mã OTP' : 
                 forgotState === 'otp' ? 'Xác Nhận & Đổi Mật Khẩu' : 
                 (isLogin ? 'Đăng Nhập' : 'Đăng Ký Tài Khoản')
@@ -373,7 +445,7 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             </button>
           </form>
 
-          {forgotState !== 'none' ? (
+          {require2FA || forgotState !== 'none' ? (
             <div className="auth-switch-mode" style={{ marginTop: '20px' }}>
               <button 
                 type="button" 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CreditCard, CheckCircle, Smartphone, MapPin, Phone, User, Clock, Check, ShieldCheck, Heart } from 'lucide-react';
-import { createOrder } from '../services/api';
+import { createOrder, applyVoucher } from '../services/api';
 
 
 function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose }) {
@@ -24,6 +24,14 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
 
   // Vietnam Provinces API State
   const [provinces, setProvinces] = useState([]);
+
+  // Voucher / Coupon states
+  const [voucherCode, setVoucherCode] = useState('');
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [voucherError, setVoucherError] = useState('');
+  const [voucherSuccess, setVoucherSuccess] = useState('');
+  const [applying, setApplying] = useState(false);
 
   // Fetch Vietnam Provinces
   useEffect(() => {
@@ -100,6 +108,42 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
 
   const [createdOrderId, setCreatedOrderId] = useState(null);
 
+  const handleApplyVoucher = async (e) => {
+    e.preventDefault();
+    if (!voucherCode.trim()) {
+      setVoucherError("Vui lòng nhập mã giảm giá.");
+      setVoucherSuccess("");
+      return;
+    }
+
+    setApplying(true);
+    setVoucherError("");
+    setVoucherSuccess("");
+
+    try {
+      const res = await applyVoucher(voucherCode.trim(), cartSubtotal);
+      const discount = parseFloat(res.data.discount_amount);
+      setVoucherDiscount(discount);
+      setAppliedVoucher(res.data);
+      setVoucherSuccess(`Áp dụng mã ${res.data.code.toUpperCase()} thành công! Giảm ${discount.toLocaleString('vi-VN')} đ`);
+    } catch (err) {
+      console.error(err);
+      setVoucherDiscount(0);
+      setAppliedVoucher(null);
+      setVoucherError(err.response?.data?.error || "Mã giảm giá không hợp lệ hoặc không đủ điều kiện sử dụng.");
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setVoucherCode("");
+    setAppliedVoucher(null);
+    setVoucherDiscount(0);
+    setVoucherError("");
+    setVoucherSuccess("");
+  };
+
   const handleRealMomoPayment = async () => {
     setIsVerifying(true);
     try {
@@ -117,6 +161,7 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
         notes: shippingInfo.notes,
         payment_method: 'momo',
         items: itemsPayload,
+        voucher_code: appliedVoucher ? appliedVoucher.code : undefined,
         redirect_url: `${window.location.origin}/`,
         ipn_url: 'http://localhost:8000/api/orders/momo-ipn/'
       });
@@ -151,7 +196,8 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
         city: shippingInfo.city,
         notes: shippingInfo.notes,
         payment_method: paymentMethod,
-        items: itemsPayload
+        items: itemsPayload,
+        voucher_code: appliedVoucher ? appliedVoucher.code : undefined
       });
 
       setCreatedOrderId(res.data.id);
@@ -170,9 +216,9 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
     simulatePaymentVerification();
   };
 
-  // Shipping cost calculation
+  // Shipping cost & discount calculations
   const shippingFee = cartSubtotal > 30000000 ? 0 : 35000;
-  const grandTotal = cartSubtotal + shippingFee;
+  const grandTotal = Math.max(0, cartSubtotal - voucherDiscount + shippingFee);
 
   // Render e-wallet visual configuration
   const getWalletConfig = () => {
@@ -521,11 +567,76 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
                 ))}
               </div>
 
+              {/* Voucher Apply Form */}
+              <div className="checkout-voucher-section" style={{ borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)', padding: '20px 0', margin: '20px 0' }}>
+                <h4 style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px', color: 'var(--color-black)' }}>Mã Giảm Giá (Voucher)</h4>
+                
+                {!appliedVoucher ? (
+                  <form onSubmit={handleApplyVoucher} style={{ display: 'flex', gap: '10px' }}>
+                    <input 
+                      type="text" 
+                      placeholder="Nhập mã voucher (e.g. KLUXURY10)"
+                      value={voucherCode}
+                      onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                      style={{ 
+                        flex: 1, 
+                        padding: '10px 12px', 
+                        border: '1px solid var(--color-border)', 
+                        background: 'rgba(0,0,0,0.02)', 
+                        fontSize: '12px', 
+                        outline: 'none', 
+                        borderRadius: '4px',
+                        color: 'var(--color-black)'
+                      }}
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={applying}
+                      className="gold-btn"
+                      style={{ padding: '0 20px', fontSize: '10px', height: '38px', whiteSpace: 'nowrap' }}
+                    >
+                      {applying ? 'ĐANG ÁP DỤNG...' : 'ÁP DỤNG'}
+                    </button>
+                  </form>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(189, 163, 128, 0.1)', padding: '12px 15px', borderRadius: '4px', border: '1px solid rgba(189, 163, 128, 0.2)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-gold)' }}>Mã: {appliedVoucher.code}</span>
+                      <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>Đã giảm: -{voucherDiscount.toLocaleString('vi-VN')} đ</span>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={handleRemoveVoucher}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: '#d63031', 
+                        fontSize: '11px', 
+                        fontWeight: 600, 
+                        cursor: 'pointer',
+                        marginLeft: 'auto'
+                      }}
+                    >
+                      Gỡ bỏ
+                    </button>
+                  </div>
+                )}
+
+                {voucherError && <div style={{ color: '#d63031', fontSize: '11px', marginTop: '8px', textAlign: 'left' }}>{voucherError}</div>}
+                {voucherSuccess && <div style={{ color: '#27ae60', fontSize: '11px', marginTop: '8px', textAlign: 'left' }}>{voucherSuccess}</div>}
+              </div>
+
               <div className="summary-totals-block">
                 <div className="totals-row">
                   <span>Tạm tính</span>
                   <span>{cartSubtotal.toLocaleString('vi-VN')} đ</span>
                 </div>
+                {voucherDiscount > 0 && (
+                  <div className="totals-row" style={{ color: '#27ae60', fontWeight: 600 }}>
+                    <span>Giảm giá</span>
+                    <span>-{voucherDiscount.toLocaleString('vi-VN')} đ</span>
+                  </div>
+                )}
                 <div className="totals-row">
                   <span>Phí vận chuyển</span>
                   <span>{shippingFee === 0 ? 'Miễn phí' : shippingFee.toLocaleString('vi-VN') + ' đ'}</span>

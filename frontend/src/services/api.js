@@ -63,7 +63,7 @@ export const getPermissions = () => api.get('/permissions/');
 export const forgotPassword = (email) => api.post('/auth/forgot-password/', { email });
 export const resetPassword = (email, otp, newPassword) => api.post('/auth/reset-password/', { email, otp, new_password: newPassword });
 
-export const loginUser = (email, password) => api.post('/auth/login/', { email, password });
+export const loginUser = (email, password, code) => api.post('/auth/login/', { email, password, ...(code ? { code } : {}) });
 export const registerUser = (name, email, password) => api.post('/auth/register/', { name, email, password });
 
 export const getFavorites = () => api.get('/favorites/');
@@ -77,6 +77,16 @@ export const createOrder = (data) => api.post('/orders/', data);
 export const updateOrderStatus = (id, status) => api.put(`/orders/${id}/`, { status });
 export const deleteOrder = (id) => api.delete(`/orders/${id}/`);
 export const verifyMomoPayment = (data) => api.post('/orders/verify-momo/', data);
+export const updateProfile = (data) => api.put('/users/update-profile/', data);
+export const get2FAStatus = () => api.get('/users/2fa-status/');
+export const request2FACode = () => api.post('/users/2fa-request-code/');
+export const enable2FA = (code) => api.post('/users/2fa-enable/', { code });
+export const disable2FA = (code) => api.post('/users/2fa-disable/', { code });
+export const applyVoucher = (code, orderTotal) => api.post('/vouchers/apply/', { code, order_total: orderTotal });
+export const getVouchers = () => api.get('/vouchers/');
+export const createVoucher = (data) => api.post('/vouchers/', data);
+export const updateVoucher = (id, data) => api.put(`/vouchers/${id}/`, data);
+export const deleteVoucher = (id) => api.delete(`/vouchers/${id}/`);
 export const getFashionNews = () => api.get('/news/');
 
 export default api;

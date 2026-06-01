@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from api.controllers import (
     ItemViewSet, CategoryViewSet, UserViewSet, GroupViewSet, PermissionViewSet,
     request_otp, reset_password, register, login, upload_image, FavoriteViewSet,
-    InventoryViewSet, OrderViewSet, get_fashion_news
+    InventoryViewSet, OrderViewSet, get_fashion_news, VoucherViewSet
 )
 
 router = DefaultRouter()
@@ -15,6 +15,7 @@ router.register(r'permissions', PermissionViewSet, basename='permission')
 router.register(r'favorites', FavoriteViewSet, basename='favorite')
 router.register(r'inventory', InventoryViewSet, basename='inventory')
 router.register(r'orders', OrderViewSet, basename='order')
+router.register(r'vouchers', VoucherViewSet, basename='voucher')
 
 
 urlpatterns = [

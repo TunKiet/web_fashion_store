@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User, Group, Permission
-from .models import Item, Category, Order, OrderItem
+from .models import Item, Category, Order, OrderItem, Voucher
 
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -99,16 +99,25 @@ class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     user_email = serializers.SerializerMethodField(read_only=True)
     pay_url = serializers.CharField(read_only=True, required=False)
+    voucher_code = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Order
         fields = [
             'id', 'user', 'user_email', 'name', 'phone', 'address', 'city', 'notes',
-            'payment_method', 'total_price', 'status', 'created_at', 'updated_at',
+            'payment_method', 'total_price', 'discount_amount', 'voucher_code', 'status', 'created_at', 'updated_at',
             'items', 'pay_url'
         ]
-        read_only_fields = ['id', 'user', 'user_email', 'total_price', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'user_email', 'total_price', 'discount_amount', 'created_at', 'updated_at']
 
     def get_user_email(self, obj):
         return obj.user.email if obj.user else ""
+
+    def get_voucher_code(self, obj):
+        return obj.voucher.code if obj.voucher else ""
+
+class VoucherSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Voucher
+        fields = '__all__'
 
