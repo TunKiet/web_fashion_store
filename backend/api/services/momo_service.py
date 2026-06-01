@@ -104,61 +104,42 @@ class MomoService:
         Xác minh chữ ký phản hồi (IPN hoặc Redirect) từ MoMo.
         Trả về: (is_valid, debug_info)
         """
-        partner_code = data.get('partnerCode')
-        order_id = data.get('orderId')
-        request_id = data.get('requestId')
-        amount = data.get('amount')
-        order_info = data.get('orderInfo', '')
-        order_type = data.get('orderType', '')
-        trans_id = data.get('transId', '')
-        result_code = str(data.get('resultCode'))
-        message = data.get('message', '')
-        pay_type = data.get('payType', '')
-        response_time = str(data.get('responseTime'))
-        extra_data = data.get('extraData', '')
         received_signature = data.get('signature')
+        if not received_signature:
+            return False, {"error": "Missing signature", "received_signature": "", "calculated_signature": "", "raw_signature": ""}
 
-        # Xây dựng raw signature để verify theo thứ tự bảng chữ cái của MoMo v2
-        raw_signature = (
-            f"accessKey={cls.ACCESS_KEY}&"
-            f"amount={amount}&"
-            f"extraData={extra_data}&"
-            f"message={message}&"
-            f"orderId={order_id}&"
-            f"orderInfo={order_info}&"
-            f"partnerCode={partner_code}&"
-            f"requestId={request_id}&"
-            f"responseTime={response_time}&"
-            f"resultCode={result_code}&"
-            f"transId={trans_id}"
-        )
-        if pay_type:
-            raw_signature += f"&payType={pay_type}"
+        # Các trường hợp lệ có thể tham gia vào chữ ký của MoMo
+        MOMO_KEYS = {
+            'partnerCode', 'orderId', 'requestId', 'amount', 'orderInfo',
+            'orderType', 'transId', 'resultCode', 'message', 'payType',
+            'responseTime', 'extraData', 'accessKey', 'errorCode', 'localMessage'
+        }
 
+        # Lọc các trường của MoMo nhận được (loại trừ signature)
+        sig_data = {k: v for k, v in data.items() if k in MOMO_KEYS and k != 'signature'}
+        
+        # Đảm bảo accessKey có mặt (MoMo không trả về accessKey trên redirect URL)
+        sig_data['accessKey'] = cls.ACCESS_KEY
+
+        # Chuẩn hóa giá trị: chuyển đổi None thành chuỗi rỗng và tất cả thành string
+        for k in sig_data:
+            if sig_data[k] is None:
+                sig_data[k] = ""
+            else:
+                sig_data[k] = str(sig_data[k])
+
+        # Sắp xếp các khóa alphabetically A-Z
+        sorted_keys = sorted(sig_data.keys())
+
+        # Tạo chuỗi ký tự thô để ký
+        raw_parts = []
+        for key in sorted_keys:
+            raw_parts.append(f"{key}={sig_data[key]}")
+
+        raw_signature = "&".join(raw_parts)
         calculated_signature = cls.generate_signature(raw_signature)
-        
+
         is_valid = (calculated_signature == received_signature)
-        
-        if not is_valid and pay_type:
-            # Thử không có pay_type
-            raw_signature_alt = (
-                f"accessKey={cls.ACCESS_KEY}&"
-                f"amount={amount}&"
-                f"extraData={extra_data}&"
-                f"message={message}&"
-                f"orderId={order_id}&"
-                f"orderInfo={order_info}&"
-                f"partnerCode={partner_code}&"
-                f"requestId={request_id}&"
-                f"responseTime={response_time}&"
-                f"resultCode={result_code}&"
-                f"transId={trans_id}"
-            )
-            calculated_signature_alt = cls.generate_signature(raw_signature_alt)
-            if calculated_signature_alt == received_signature:
-                is_valid = True
-                calculated_signature = calculated_signature_alt
-                raw_signature = raw_signature_alt
 
         debug_info = {
             "received_signature": received_signature,

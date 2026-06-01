@@ -119,12 +119,10 @@ class OrderService:
         # 1. Xác thực chữ ký phản hồi
         is_valid, debug_info = MomoService.verify_callback_signature(payload)
         if not is_valid:
-            raise ValidationError(
-                f"Chữ ký phản hồi từ MoMo không hợp lệ.\n"
-                f"- Calculated: {debug_info['calculated_signature']}\n"
-                f"- Received: {debug_info['received_signature']}\n"
-                f"- Raw: {debug_info['raw_signature']}"
-            )
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"MoMo signature verification failed. Calculated: {debug_info['calculated_signature']}, Received: {debug_info['received_signature']}, Raw: {debug_info['raw_signature']}")
+            raise ValidationError("Chữ ký phản hồi từ MoMo không hợp lệ.")
 
         # 2. Phân tích cú pháp Order ID để tìm đúng đơn hàng trong database
         order_id_str = payload.get('orderId', '')
