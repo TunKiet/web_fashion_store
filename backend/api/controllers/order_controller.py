@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import action
 from api.serializers import OrderSerializer
 from api.services.order_service import OrderService
 
@@ -8,7 +9,9 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
 
     def get_permissions(self):
-        # Yêu cầu đăng nhập cho tất cả các thao tác liên quan đến đơn hàng
+        # Cho phép các endpoint verify MoMo không cần Token Auth (chữ ký được xác thực riêng tư bằng Secret Key)
+        if self.action in ['verify_momo', 'momo_ipn']:
+            return [AllowAny()]
         permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
 
@@ -23,6 +26,34 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='verify-momo')
+    def verify_momo(self, request):
+        try:
+            order = OrderService.verify_momo_payment(request.data)
+            serializer = self.get_serializer(order)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='momo-ipn')
+    def momo_ipn(self, request):
+        try:
+            order = OrderService.verify_momo_payment(request.data)
+            return Response({
+                "partnerCode": request.data.get("partnerCode"),
+                "orderId": request.data.get("orderId"),
+                "requestId": request.data.get("requestId"),
+                "amount": request.data.get("amount"),
+                "resultCode": 0,
+                "message": "Success",
+                "responseTime": request.data.get("responseTime")
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "resultCode": 99,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
         # Chỉ Admin/Staff mới được cập nhật trạng thái đơn hàng

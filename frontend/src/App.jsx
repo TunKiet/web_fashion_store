@@ -18,6 +18,7 @@ import AdminDashboard from './components/AdminDashboard';
 import UserProfile from './components/UserProfile';
 import CheckoutPage from './components/CheckoutPage';
 import ConfirmModal from './components/ConfirmModal';
+import PaymentResult from './components/PaymentResult';
 
 // Fallback sản phẩm cao cấp tiếng Việt khi không kết nối được Django API
 const FALLBACK_PRODUCTS = [
@@ -99,6 +100,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState('store'); // 'store' or 'admin'
+  const [momoParams, setMomoParams] = useState(null);
 
   // Advanced filters state for "ALL" category
   const [priceMin, setPriceMin] = useState('');
@@ -157,6 +159,25 @@ function App() {
       } catch (e) {
         console.error(e);
       }
+    }
+  }, []);
+
+  // Lắng nghe phản hồi từ cổng thanh toán MoMo (trên URL Redirect)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const partnerCode = urlParams.get('partnerCode');
+    const orderId = urlParams.get('orderId');
+    const resultCode = urlParams.get('resultCode');
+    
+    if (partnerCode && orderId && resultCode !== null) {
+      const params = {};
+      urlParams.forEach((value, key) => {
+        params[key] = value;
+      });
+      setMomoParams(params);
+      setView('momo-callback');
+      // Xóa query parameters trên thanh địa chỉ để tránh lặp lại hành động khi reload trang
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
@@ -465,6 +486,18 @@ function App() {
 
 
 
+  if (view === 'momo-callback') {
+    return (
+      <PaymentResult
+        momoParams={momoParams}
+        onClose={() => {
+          setView('store');
+          setMomoParams(null);
+        }}
+      />
+    );
+  }
+
   if (view === 'checkout') {
     return (
       <CheckoutPage
@@ -747,6 +780,7 @@ function App() {
                     isFavorite={favorites.includes(product.id)}
                     onToggleFavorite={toggleFavorite}
                     onSelectCategory={setActiveCategory}
+                    simpleMode={true}
                   />
                 ))}
               </div>

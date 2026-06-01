@@ -98,13 +98,14 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     user_email = serializers.SerializerMethodField(read_only=True)
+    pay_url = serializers.CharField(read_only=True, required=False)
 
     class Meta:
         model = Order
         fields = [
             'id', 'user', 'user_email', 'name', 'phone', 'address', 'city', 'notes',
             'payment_method', 'total_price', 'status', 'created_at', 'updated_at',
-            'items'
+            'items', 'pay_url'
         ]
         read_only_fields = ['id', 'user', 'user_email', 'total_price', 'created_at', 'updated_at']
 

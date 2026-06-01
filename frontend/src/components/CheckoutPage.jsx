@@ -87,7 +87,9 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
       return;
     }
 
-    if (['momo', 'zalopay', 'vnpay'].includes(paymentMethod)) {
+    if (paymentMethod === 'momo') {
+      handleRealMomoPayment();
+    } else if (['zalopay', 'vnpay'].includes(paymentMethod)) {
       setTimeLeft(900); // reset 15 mins
       setShowQRModal(true);
     } else {
@@ -97,6 +99,41 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
   };
 
   const [createdOrderId, setCreatedOrderId] = useState(null);
+
+  const handleRealMomoPayment = async () => {
+    setIsVerifying(true);
+    try {
+      const itemsPayload = cart.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        selectedSize: item.selectedSize || 'M'
+      }));
+
+      const res = await createOrder({
+        name: shippingInfo.name,
+        phone: shippingInfo.phone,
+        address: shippingInfo.address,
+        city: shippingInfo.city,
+        notes: shippingInfo.notes,
+        payment_method: 'momo',
+        items: itemsPayload,
+        redirect_url: `${window.location.origin}/`,
+        ipn_url: 'http://localhost:8000/api/orders/momo-ipn/'
+      });
+
+      if (res.data.pay_url) {
+        onClearCart();
+        window.location.href = res.data.pay_url;
+      } else {
+        alert("Không thể khởi tạo phiên thanh toán MoMo. Vui lòng thử lại.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Đã xảy ra lỗi khi tạo đơn hàng thanh toán MoMo.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const simulatePaymentVerification = async () => {
     setIsVerifying(true);
@@ -127,7 +164,6 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
       setIsVerifying(false);
     }
   };
-
 
   const handleConfirmQR = () => {
     setShowQRModal(false);

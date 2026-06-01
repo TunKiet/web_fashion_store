@@ -764,12 +764,15 @@
     width: 100%;
     max-height: 95vh;
   }
+
   .modal-image-side {
     max-height: 400px;
   }
+
   .modal-info-side {
     padding: 35px 25px;
   }
+
   .modal-title {
     font-size: 26px;
   }
@@ -909,27 +912,35 @@
     grid-template-columns: 1fr;
     gap: 30px;
   }
+
   .footer-bottom {
     flex-direction: column;
     gap: 15px;
     text-align: center;
   }
+
   .site-header {
     height: 70px;
   }
+
   .header-container {
     height: 70px;
   }
+
   .logo {
     font-size: 20px;
     letter-spacing: 3px;
   }
+
   .nav-links {
-    display: none; /* simple mobile design */
+    display: none;
+    /* simple mobile design */
   }
+
   .hero-title {
     font-size: 38px;
   }
+
   .shop-section {
     padding: 60px 0;
   }
@@ -1373,6 +1384,7 @@
     position: relative;
     padding: 10px;
   }
+
   .modal-nav-btn {
     position: absolute;
     top: 50%;
@@ -1383,10 +1395,12 @@
     background-color: rgba(252, 251, 250, 0.9);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
+
   .prev-btn {
     left: 15px;
     margin-right: 0;
   }
+
   .next-btn {
     right: 15px;
     margin-left: 0;
@@ -1465,6 +1479,7 @@
   .header-search-overlay {
     padding: 0 10px;
   }
+
   .header-search-input {
     font-size: 11px;
     letter-spacing: 1px;
@@ -1871,14 +1886,17 @@
   .profile-card-body {
     flex-direction: column;
   }
+
   .profile-left-column {
     border-right: none;
     border-bottom: 1px solid var(--color-border);
     padding: 40px 30px;
   }
+
   .profile-right-column {
     padding: 40px 30px;
   }
+
   .user-profile-overlay {
     padding: 20px 10px;
   }
@@ -2539,6 +2557,7 @@
     grid-template-columns: 1fr;
     gap: 30px;
   }
+
   .summary-sticky-card {
     position: static;
   }
@@ -2548,18 +2567,23 @@
   .checkout-page-overlay {
     padding: 20px 0 40px;
   }
+
   .checkout-section-block {
     padding: 20px;
   }
+
   .form-fields-grid {
     grid-template-columns: 1fr;
   }
+
   .checkout-input-group.full-width {
     grid-column: span 1;
   }
+
   .payment-method-selector-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .success-message-card {
     padding: 30px 20px;
   }
@@ -2708,6 +2732,7 @@
     grid-template-columns: 1fr;
     gap: 15px;
   }
+
   .reset-filters-btn {
     width: 100%;
   }
@@ -2877,6 +2902,7 @@
   0% {
     transform: translateX(-50%);
   }
+
   100% {
     transform: translateX(0);
   }
@@ -2894,10 +2920,6 @@
   aspect-ratio: auto !important;
 }
 
-
-
-
-
-
-
-
+.featured-marquee-track .product-card .product-name {
+  color: var(--color-white);
+}

@@ -3,6 +3,7 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from api.models import Order, OrderItem, Item
 from api.services.inventory_service import InventoryService
+from api.services.momo_service import MomoService
 
 class OrderService:
     @staticmethod
@@ -50,6 +51,7 @@ class OrderService:
         total_price = subtotal + shipping_fee
 
         # 3. Tạo bản ghi đơn hàng
+        payment_method = data.get('payment_method', 'cod').strip()
         order = Order.objects.create(
             user=user,
             name=data.get('name', '').strip(),
@@ -57,7 +59,7 @@ class OrderService:
             address=data.get('address', '').strip(),
             city=data.get('city', 'Hồ Chí Minh').strip(),
             notes=data.get('notes', '').strip(),
-            payment_method=data.get('payment_method', 'cod').strip(),
+            payment_method=payment_method,
             total_price=total_price,
             status='PENDING'
         )
@@ -83,6 +85,14 @@ class OrderService:
                 user=user
             )
 
+        # 5. Khởi tạo phiên thanh toán MoMo nếu thanh toán qua MoMo
+        if payment_method == 'momo':
+            redirect_url = data.get('redirect_url', 'http://localhost:5173/payment-result')
+            ipn_url = data.get('ipn_url', 'http://localhost:8000/api/orders/momo-ipn/')
+            
+            pay_url = MomoService.create_payment_session(order, redirect_url, ipn_url)
+            order.pay_url = pay_url
+
         return order
 
     @staticmethod
@@ -98,4 +108,59 @@ class OrderService:
 
         order.status = status_code
         order.save()
+        return order
+
+    @staticmethod
+    @transaction.atomic
+    def verify_momo_payment(payload):
+        """
+        Xác minh chữ ký và cập nhật trạng thái đơn hàng dựa trên phản hồi của MoMo.
+        """
+        # 1. Xác thực chữ ký phản hồi
+        is_valid, debug_info = MomoService.verify_callback_signature(payload)
+        if not is_valid:
+            raise ValidationError(
+                f"Chữ ký phản hồi từ MoMo không hợp lệ.\n"
+                f"- Calculated: {debug_info['calculated_signature']}\n"
+                f"- Received: {debug_info['received_signature']}\n"
+                f"- Raw: {debug_info['raw_signature']}"
+            )
+
+        # 2. Phân tích cú pháp Order ID để tìm đúng đơn hàng trong database
+        order_id_str = payload.get('orderId', '')
+        parts = order_id_str.split('_')
+        if len(parts) < 3 or parts[0] != 'TK' or parts[1] != 'ORDER':
+            raise ValidationError("Mã đơn hàng MoMo gửi về không đúng định dạng.")
+
+        try:
+            actual_order_id = int(parts[2])
+            order = Order.objects.get(pk=actual_order_id)
+        except (ValueError, Order.DoesNotExist):
+            raise ValidationError("Đơn hàng tương ứng với mã MoMo không tồn tại.")
+
+        result_code = int(payload.get('resultCode', -1))
+
+        if result_code == 0:
+            # Thanh toán thành công
+            if order.status == 'PENDING':
+                order.status = 'PROCESSING'
+                order.notes = f"{order.notes}\n[Thanh toán MoMo thành công. Mã giao dịch MoMo: {payload.get('transId')}].".strip()
+                order.save()
+        else:
+            # Thanh toán thất bại hoặc người dùng hủy bỏ
+            if order.status == 'PENDING':
+                order.status = 'CANCELLED'
+                order.notes = f"{order.notes}\n[Thanh toán MoMo thất bại hoặc bị hủy. Mã lỗi: {result_code}, Lý do: {payload.get('message', '')}].".strip()
+                order.save()
+
+                # Tự động hoàn trả hàng lại vào kho
+                for order_item in order.items.all():
+                    if order_item.item:
+                        InventoryService.create_adjustment(
+                            item_id=order_item.item.id,
+                            transaction_type='IMPORT',
+                            quantity=order_item.quantity,
+                            reason=f"Hoàn kho tự động (Hủy thanh toán MoMo) cho Đơn hàng #{order.id}",
+                            user=None
+                        )
         return order
