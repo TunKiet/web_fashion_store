@@ -11,7 +11,8 @@ import {
 import {
   LayoutDashboard, ShoppingBag, Tag, ArrowLeft,
   Plus, Search, Edit2, Trash2, X, AlertCircle, Sparkles, RotateCcw, Trash,
-  Users, Shield, Key, Package, ClipboardList, CreditCard, Clock, Eye, FileSpreadsheet
+  Users, Shield, Key, Package, ClipboardList, CreditCard, Clock, Eye, FileSpreadsheet,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import './AdminDashboard.css';
 import * as XLSX from 'xlsx';
@@ -31,6 +32,10 @@ function AdminDashboard({ onClose, currentUser }) {
 
   // Search filter
   const [productSearch, setProductSearch] = useState('');
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Modals visibility
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -98,6 +103,10 @@ function AdminDashboard({ onClose, currentUser }) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportMonth, setExportMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
   const [exportYear, setExportYear] = useState(String(new Date().getFullYear()));
+  // Reset page when switching tabs or changing search queries
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, productsTab, categoriesTab, orderStatusFilter, productSearch, userSearch, roleSearch, orderSearch]);
 
   // Fetch initial data
   useEffect(() => {
@@ -854,6 +863,66 @@ function AdminDashboard({ onClose, currentUser }) {
 
   const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
 
+  // Paginated Data Slices
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = currentPage * itemsPerPage;
+
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+  const totalPagesProducts = Math.ceil(filteredProducts.length / itemsPerPage);
+
+  const paginatedDeletedProducts = filteredDeletedProducts.slice(startIndex, endIndex);
+  const totalPagesDeletedProducts = Math.ceil(filteredDeletedProducts.length / itemsPerPage);
+
+  const paginatedCategories = categories.slice(startIndex, endIndex);
+  const totalPagesCategories = Math.ceil(categories.length / itemsPerPage);
+
+  const paginatedDeletedCategories = deletedCategories.slice(startIndex, endIndex);
+  const totalPagesDeletedCategories = Math.ceil(deletedCategories.length / itemsPerPage);
+
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+  const totalPagesUsers = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  const paginatedRoles = filteredRoles.slice(startIndex, endIndex);
+  const totalPagesRoles = Math.ceil(filteredRoles.length / itemsPerPage);
+
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+  const totalPagesOrders = Math.ceil(filteredOrders.length / itemsPerPage);
+
+  // Pagination UI Helper
+  const renderPagination = (totalItems, totalPages) => {
+    if (totalPages <= 1) return null;
+    return (
+      <div className="admin-pagination-wrapper">
+        <div className="admin-pagination-info">
+          Hiển thị từ <span>{totalItems === 0 ? 0 : startIndex + 1}</span> đến <span>{Math.min(totalItems, endIndex)}</span> trong tổng số <span>{totalItems}</span> bản ghi
+        </div>
+        <div className="admin-pagination-buttons">
+          <button
+            type="button"
+            className="admin-pagination-btn"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft size={14} />
+            <span>Trước</span>
+          </button>
+          <span className="admin-pagination-page-indicator">
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            type="button"
+            className="admin-pagination-btn"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+          >
+            <span>Sau</span>
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="admin-dashboard-container">
       {/* SIDEBAR */}
@@ -1142,128 +1211,134 @@ function AdminDashboard({ onClose, currentUser }) {
                 </div>
 
                 {productsTab === 'list' ? (
-                  <div className="table-wrapper">
-                    <table className="admin-table">
-                      <thead>
-                        <tr>
-                          <th>Hình ảnh</th>
-                          <th>Tên sản phẩm</th>
-                          <th>Giá tiền (VNĐ)</th>
-                          <th>Danh mục</th>
-                          <th>Nổi bật</th>
-                          <th>Hành động</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredProducts.length === 0 ? (
+                  <>
+                    <div className="table-wrapper">
+                      <table className="admin-table">
+                        <thead>
                           <tr>
-                            <td colSpan="6" className="empty-table-cell">Không tìm thấy sản phẩm nào.</td>
+                            <th>Hình ảnh</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Giá tiền (VNĐ)</th>
+                            <th>Danh mục</th>
+                            <th>Nổi bật</th>
+                            <th>Hành động</th>
                           </tr>
-                        ) : (
-                          filteredProducts.map(p => (
-                            <tr key={p.id}>
-                              <td>
-                                <img
-                                  src={p.image_url || "/images/fashion_dress.png"}
-                                  alt={p.title}
-                                  className="table-thumbnail"
-                                  onError={(e) => { e.target.src = "/images/fashion_dress.png"; }}
-                                />
-                              </td>
-                              <td className="table-bold-text">{p.title}</td>
-                              <td>{parseFloat(p.price).toLocaleString('vi-VN')} đ</td>
-                              <td><span className="category-badge">{p.category}</span></td>
-                              <td>
-                                {p.is_featured ? (
-                                  <span className="featured-badge true">Yes</span>
-                                ) : (
-                                  <span className="featured-badge false">No</span>
-                                )}
-                              </td>
-                              <td>
-                                <div className="table-actions">
-                                  <button className="table-action-btn edit" onClick={() => handleOpenProductEdit(p)}>
-                                    <Edit2 size={14} />
-                                  </button>
-                                  <button className="table-action-btn delete" onClick={() => handleProductDelete(p.id, p.title)}>
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </td>
+                        </thead>
+                        <tbody>
+                          {filteredProducts.length === 0 ? (
+                            <tr>
+                              <td colSpan="6" className="empty-table-cell">Không tìm thấy sản phẩm nào.</td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          ) : (
+                            paginatedProducts.map(p => (
+                              <tr key={p.id}>
+                                <td>
+                                  <img
+                                    src={p.image_url || "/images/fashion_dress.png"}
+                                    alt={p.title}
+                                    className="table-thumbnail"
+                                    onError={(e) => { e.target.src = "/images/fashion_dress.png"; }}
+                                  />
+                                </td>
+                                <td className="table-bold-text">{p.title}</td>
+                                <td>{parseFloat(p.price).toLocaleString('vi-VN')} đ</td>
+                                <td><span className="category-badge">{p.category}</span></td>
+                                <td>
+                                  {p.is_featured ? (
+                                    <span className="featured-badge true">Yes</span>
+                                  ) : (
+                                    <span className="featured-badge false">No</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <div className="table-actions">
+                                    <button className="table-action-btn edit" onClick={() => handleOpenProductEdit(p)}>
+                                      <Edit2 size={14} />
+                                    </button>
+                                    <button className="table-action-btn delete" onClick={() => handleProductDelete(p.id, p.title)}>
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {renderPagination(filteredProducts.length, totalPagesProducts)}
+                  </>
                 ) : (
-                  <div className="table-wrapper">
-                    <table className="admin-table">
-                      <thead>
-                        <tr>
-                          <th>Hình ảnh</th>
-                          <th>Tên sản phẩm</th>
-                          <th>Giá tiền (VNĐ)</th>
-                          <th>Danh mục</th>
-                          <th>Hành động</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredDeletedProducts.length === 0 ? (
+                  <>
+                    <div className="table-wrapper">
+                      <table className="admin-table">
+                        <thead>
                           <tr>
-                            <td colSpan="5" className="empty-table-cell">Thùng rác trống.</td>
+                            <th>Hình ảnh</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Giá tiền (VNĐ)</th>
+                            <th>Danh mục</th>
+                            <th>Hành động</th>
                           </tr>
-                        ) : (
-                          filteredDeletedProducts.map(p => (
-                            <tr key={p.id}>
-                              <td>
-                                <img
-                                  src={p.image_url || "/images/fashion_dress.png"}
-                                  alt={p.title}
-                                  className="table-thumbnail"
-                                  style={{ filter: 'grayscale(100%)', opacity: '0.6' }}
-                                  onError={(e) => { e.target.src = "/images/fashion_dress.png"; }}
-                                />
-                              </td>
-                              <td className="table-bold-text" style={{ color: '#888', textDecoration: 'line-through' }}>{p.title}</td>
-                              <td style={{ color: '#888' }}>{parseFloat(p.price).toLocaleString('vi-VN')} đ</td>
-                              <td><span className="category-badge" style={{ opacity: 0.6 }}>{p.category}</span></td>
-                              <td>
-                                <div className="table-actions">
-                                  <button 
-                                    type="button"
-                                    className="table-action-btn edit" 
-                                    onClick={() => handleProductRestore(p.id, p.title)}
-                                    title="Khôi phục"
-                                    style={{ color: '#2ecc71', borderColor: 'rgba(46, 204, 113, 0.4)' }}
-                                  >
-                                    <RotateCcw size={14} />
-                                  </button>
-                                  <button 
-                                    type="button"
-                                    className="table-action-btn delete" 
-                                    onClick={() => handleProductForceDelete(p.id, p.title)}
-                                    title="Xóa vĩnh viễn"
-                                    style={{ color: '#e74c3c', borderColor: 'rgba(231, 76, 60, 0.4)' }}
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </td>
+                        </thead>
+                        <tbody>
+                          {filteredDeletedProducts.length === 0 ? (
+                            <tr>
+                              <td colSpan="5" className="empty-table-cell">Thùng rác trống.</td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          ) : (
+                            paginatedDeletedProducts.map(p => (
+                              <tr key={p.id}>
+                                <td>
+                                  <img
+                                    src={p.image_url || "/images/fashion_dress.png"}
+                                    alt={p.title}
+                                    className="table-thumbnail"
+                                    style={{ filter: 'grayscale(100%)', opacity: '0.6' }}
+                                    onError={(e) => { e.target.src = "/images/fashion_dress.png"; }}
+                                  />
+                                </td>
+                                <td className="table-bold-text" style={{ color: '#888', textDecoration: 'line-through' }}>{p.title}</td>
+                                <td>{parseFloat(p.price).toLocaleString('vi-VN')} đ</td>
+                                <td><span className="category-badge" style={{ opacity: 0.6 }}>{p.category}</span></td>
+                                <td>
+                                  <div className="table-actions">
+                                    <button 
+                                      type="button"
+                                      className="table-action-btn edit" 
+                                      onClick={() => handleProductRestore(p.id, p.title)}
+                                      title="Khôi phục"
+                                      style={{ color: '#2ecc71', borderColor: 'rgba(46, 204, 113, 0.4)' }}
+                                    >
+                                      <RotateCcw size={14} />
+                                    </button>
+                                    <button 
+                                      type="button"
+                                      className="table-action-btn delete" 
+                                      onClick={() => handleProductForceDelete(p.id, p.title)}
+                                      title="Xóa vĩnh viễn"
+                                      style={{ color: '#e74c3c', borderColor: 'rgba(231, 76, 60, 0.4)' }}
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {renderPagination(filteredDeletedProducts.length, totalPagesDeletedProducts)}
+                  </>
                 )}
               </div>
             )}
 
             {/* CATEGORIES TAB */}
+            {/* CATEGORIES TAB */}
             {activeTab === 'categories' && (
               <div className="admin-table-section">
-                {/* Sub tabs */}
                 {/* Horizontal row for Sub-tabs & Add button */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(189, 163, 128, 0.2)', paddingBottom: '10px' }}>
                   <div style={{ display: 'flex', gap: '16px' }}>
@@ -1321,7 +1396,6 @@ function AdminDashboard({ onClose, currentUser }) {
 
                 {categoriesTab === 'list' ? (
                   <>
-
                     <div className="table-wrapper">
                       <table className="admin-table">
                         <thead>
@@ -1338,7 +1412,7 @@ function AdminDashboard({ onClose, currentUser }) {
                               <td colSpan="4" className="empty-table-cell">Không có danh mục nào.</td>
                             </tr>
                           ) : (
-                            categories.map(c => (
+                            paginatedCategories.map(c => (
                               <tr key={c.id}>
                                 <td className="table-bold-text">{c.name}</td>
                                 <td className="table-code-text">{c.slug}</td>
@@ -1359,6 +1433,7 @@ function AdminDashboard({ onClose, currentUser }) {
                         </tbody>
                       </table>
                     </div>
+                    {renderPagination(categories.length, totalPagesCategories)}
                   </>
                 ) : (
                   <>
@@ -1378,7 +1453,7 @@ function AdminDashboard({ onClose, currentUser }) {
                               <td colSpan="4" className="empty-table-cell">Thùng rác trống.</td>
                             </tr>
                           ) : (
-                            deletedCategories.map(c => (
+                            paginatedDeletedCategories.map(c => (
                               <tr key={c.id}>
                                 <td className="table-bold-text" style={{ color: '#888', textDecoration: 'line-through' }}>{c.name}</td>
                                 <td className="table-code-text" style={{ color: '#888' }}>{c.slug}</td>
@@ -1411,6 +1486,7 @@ function AdminDashboard({ onClose, currentUser }) {
                         </tbody>
                       </table>
                     </div>
+                    {renderPagination(deletedCategories.length, totalPagesDeletedCategories)}
                   </>
                 )}
               </div>
@@ -1479,7 +1555,7 @@ function AdminDashboard({ onClose, currentUser }) {
                           <td colSpan="6" className="empty-table-cell">Không tìm thấy tài khoản nào.</td>
                         </tr>
                       ) : (
-                        filteredUsers.map(u => {
+                        paginatedUsers.map(u => {
                           const isSelf = u.email === currentUser?.email;
                           let roleBadge = <span className="featured-badge false">Khách hàng</span>;
                           if (u.is_superuser) {
@@ -1538,6 +1614,7 @@ function AdminDashboard({ onClose, currentUser }) {
                     </tbody>
                   </table>
                 </div>
+                {renderPagination(filteredUsers.length, totalPagesUsers)}
               </div>
             )}
 
@@ -1602,7 +1679,7 @@ function AdminDashboard({ onClose, currentUser }) {
                           <td colSpan="4" className="empty-table-cell">Không tìm thấy vai trò nào.</td>
                         </tr>
                       ) : (
-                        filteredRoles.map(r => (
+                        paginatedRoles.map(r => (
                           <tr key={r.id}>
                             <td className="table-bold-text">{r.name}</td>
                             <td>
@@ -1643,6 +1720,7 @@ function AdminDashboard({ onClose, currentUser }) {
                     </tbody>
                   </table>
                 </div>
+                {renderPagination(filteredRoles.length, totalPagesRoles)}
               </div>
             )}
 
@@ -1703,7 +1781,7 @@ function AdminDashboard({ onClose, currentUser }) {
                           <td colSpan="6" className="empty-table-cell">Không tìm thấy sản phẩm nào.</td>
                         </tr>
                       ) : (
-                        filteredProducts.map(p => {
+                        paginatedProducts.map(p => {
                           const isEditingStock = editingStockId === p.id;
                           const currentStock = p.stock !== undefined ? p.stock : 10;
                           
@@ -1813,6 +1891,7 @@ function AdminDashboard({ onClose, currentUser }) {
                     </tbody>
                   </table>
                 </div>
+                {renderPagination(filteredProducts.length, totalPagesProducts)}
               </div>
             )}
 
@@ -1978,7 +2057,7 @@ function AdminDashboard({ onClose, currentUser }) {
                           <td colSpan="8" className="empty-table-cell">Không tìm thấy đơn hàng nào.</td>
                         </tr>
                       ) : (
-                        filteredOrders.map(o => {
+                        paginatedOrders.map(o => {
                           let statusClass = "order-status-badge pending";
                           let statusLabel = "Chờ xử lý";
                           if (o.status === "PROCESSING") {
@@ -2033,6 +2112,7 @@ function AdminDashboard({ onClose, currentUser }) {
                     </tbody>
                   </table>
                 </div>
+                {renderPagination(filteredOrders.length, totalPagesOrders)}
               </div>
             )}
           </>

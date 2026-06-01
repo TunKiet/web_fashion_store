@@ -1,11 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 class HasModelPermission(BasePermission):
-    """
-    Custom permission class to check user permissions from DB.
-    Superusers bypass all checks.
-    Staff users are checked against their assigned roles/permissions.
-    """
     def has_permission(self, request, view):
         # Determine the model name from the view's queryset or serializer_class
         model_cls = None

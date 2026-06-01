@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from api.controllers import (
     ItemViewSet, CategoryViewSet, UserViewSet, GroupViewSet, PermissionViewSet,
     request_otp, reset_password, register, login, upload_image, FavoriteViewSet,
-    InventoryViewSet, OrderViewSet
+    InventoryViewSet, OrderViewSet, get_fashion_news
 )
 
 router = DefaultRouter()
@@ -19,6 +19,7 @@ router.register(r'orders', OrderViewSet, basename='order')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('news/', get_fashion_news, name='fashion_news'),
     path('upload/', upload_image, name='upload_image'),
     path('auth/register/', register, name='register'),
     path('auth/login/', login, name='login'),

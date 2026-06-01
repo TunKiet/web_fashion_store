@@ -70,6 +70,25 @@ function Header({
             )}
           </button>
 
+          <button
+            className={`nav-link ${activeCategory === 'NEWS' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveCategory('NEWS');
+              const grid = document.getElementById('shop-grid');
+              if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+            }}
+            style={{ position: 'relative' }}
+          >
+            Tin Tức Thời Trang
+            {activeCategory === 'NEWS' && (
+              <motion.div
+                layoutId="activeNavLine"
+                className="active-nav-line"
+                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
+              />
+            )}
+          </button>
+
           {categories.filter(c => !c.parent).map(parent => {
             const children = categories.filter(c => c.parent === parent.id);
             const isParentActive = activeCategory.toLowerCase() === parent.name.toLowerCase() || 

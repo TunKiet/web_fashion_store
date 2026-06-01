@@ -76,6 +76,6 @@ export const getOrders = () => api.get('/orders/');
 export const createOrder = (data) => api.post('/orders/', data);
 export const updateOrderStatus = (id, status) => api.put(`/orders/${id}/`, { status });
 export const deleteOrder = (id) => api.delete(`/orders/${id}/`);
-
+export const getFashionNews = () => api.get('/news/');
 
 export default api;

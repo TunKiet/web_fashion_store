@@ -9,7 +9,7 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
     name: currentUser?.name || '',
     phone: '',
     address: '',
-    city: 'Hồ Chí Minh',
+    city: 'Thành phố Hồ Chí Minh',
     notes: ''
   });
 
@@ -21,6 +21,38 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutes countdown
+
+  // Vietnam Provinces API State
+  const [provinces, setProvinces] = useState([]);
+
+  // Fetch Vietnam Provinces
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const response = await fetch('https://provinces.open-api.vn/api/v2/p/');
+        if (!response.ok) throw new Error('Failed to fetch provinces');
+        const data = await response.json();
+        // Sort provinces alphabetically by name for better UX
+        const sortedData = data.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+        setProvinces(sortedData);
+      } catch (err) {
+        console.error("Error fetching provinces:", err);
+        // Fallback to static list if API is down
+        setProvinces([
+          { code: 79, name: 'Thành phố Hồ Chí Minh' },
+          { code: 1, name: 'Thành phố Hà Nội' },
+          { code: 48, name: 'Thành phố Đà Nẵng' },
+          { code: 92, name: 'Thành phố Cần Thơ' },
+          { code: 31, name: 'Thành phố Hải Phòng' },
+          { code: 30, name: 'Tỉnh Quảng Ninh' },
+          { code: 74, name: 'Tỉnh Bình Dương' },
+          { code: 75, name: 'Tỉnh Đồng Nai' },
+          { code: 91, name: 'Tỉnh Kiên Giang' }
+        ]);
+      }
+    };
+    fetchProvinces();
+  }, []);
 
   // Format countdown timer
   useEffect(() => {
@@ -264,12 +296,16 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
 
                   <div className="checkout-input-group">
                     <label>Tỉnh/Thành phố *</label>
-                    <select name="city" value={shippingInfo.city} onChange={handleInputChange}>
-                      <option value="Hồ Chí Minh">TP. Hồ Chí Minh</option>
-                      <option value="Hà Nội">TP. Hà Nội</option>
-                      <option value="Đà Nẵng">TP. Đà Nẵng</option>
-                      <option value="Cần Thơ">TP. Cần Thơ</option>
-                      <option value="Hải Phòng">TP. Hải Phòng</option>
+                    <select name="city" value={shippingInfo.city} onChange={handleInputChange} required>
+                      {provinces.length === 0 ? (
+                        <option value={shippingInfo.city || ''}>{shippingInfo.city || 'Đang tải danh sách...'}</option>
+                      ) : (
+                        provinces.map(p => (
+                          <option key={p.code} value={p.name}>
+                            {p.name}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
 

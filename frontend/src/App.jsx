@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getItems, getCategories, getFavorites, toggleFavoriteApi } from './services/api';
+import { getItems, getCategories, getFavorites, toggleFavoriteApi, getFashionNews } from './services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import './App.css';
@@ -106,6 +106,11 @@ function App() {
   const [sortBy, setSortBy] = useState('newest');
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
 
+  // Fashion News states
+  const [news, setNews] = useState([]);
+  const [loadingNews, setLoadingNews] = useState(false);
+  const [newsError, setNewsError] = useState(null);
+
   // Tự động reset về trang 1 và cuộn lên đầu khi lọc danh mục khác hoặc tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
@@ -117,6 +122,27 @@ function App() {
       setIsFilterExpanded(false);
     }
   }, [activeCategory, searchQuery]);
+
+  // Fetch Fashion News from backend RSS parser
+  useEffect(() => {
+    if (activeCategory === 'NEWS') {
+      setLoadingNews(true);
+      setNewsError(null);
+      getFashionNews()
+        .then(res => {
+          if (res.data) {
+            setNews(res.data);
+          }
+        })
+        .catch(err => {
+          console.error("Error loading fashion news:", err);
+          setNewsError("Không thể tải tin tức thời trang lúc này. Vui lòng thử lại sau.");
+        })
+        .finally(() => {
+          setLoadingNews(false);
+        });
+    }
+  }, [activeCategory]);
 
   // Khôi phục thông tin đăng nhập từ localStorage khi khởi động
   useEffect(() => {
@@ -412,6 +438,14 @@ function App() {
   const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
   const currentItems = sortedProducts.slice(indexOfFirstItem, indexOfLastItem);
 
+  // Logic phân trang cho Tin tức
+  const NEWS_ITEMS_PER_PAGE = 9;
+  const totalNewsPages = Math.ceil(news.length / NEWS_ITEMS_PER_PAGE);
+  const indexOfLastNewsItem = currentPage * NEWS_ITEMS_PER_PAGE;
+  const indexOfFirstNewsItem = indexOfLastNewsItem - NEWS_ITEMS_PER_PAGE;
+  const currentNewsItems = news.slice(indexOfFirstNewsItem, indexOfLastNewsItem);
+
+
   if (view === 'checkout') {
     return (
       <CheckoutPage
@@ -524,6 +558,59 @@ function App() {
                     fontWeight: '300'
                   }}>
                     Nơi lưu trữ những thiết kế cao cấp và phụ kiện sang trọng bạn đã đặc biệt quan tâm.
+                  </p>
+                </div>
+              </div>
+            );
+          } else if (activeCategory === 'NEWS') {
+            return (
+              <div className="category-banner-section" style={{
+                padding: '160px 0 80px 0',
+                background: 'linear-gradient(135deg, #0d0d0d 0%, #151515 100%)',
+                textAlign: 'center',
+                borderBottom: '1px solid rgba(189, 163, 128, 0.15)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '-50%',
+                  left: '-50%',
+                  width: '200%',
+                  height: '200%',
+                  background: 'radial-gradient(circle, rgba(189, 163, 128, 0.03) 0%, transparent 70%)',
+                  pointerEvents: 'none'
+                }} />
+                <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+                  <span style={{ 
+                    color: '#bda380', 
+                    fontSize: '0.9rem', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '3px', 
+                    display: 'block',
+                    marginBottom: '10px'
+                  }}>
+                    Vogue RSS Feed
+                  </span>
+                  <h1 style={{ 
+                    fontSize: '3rem', 
+                    color: '#ffffff', 
+                    fontFamily: 'var(--font-serif, serif)', 
+                    fontWeight: '300',
+                    margin: '0 0 15px 0',
+                    letterSpacing: '1px'
+                  }}>
+                    Tin Tức Thời Trang
+                  </h1>
+                  <p style={{ 
+                    color: '#999999', 
+                    maxWidth: '600px', 
+                    margin: '0 auto', 
+                    fontSize: '1rem',
+                    lineHeight: '1.6',
+                    fontWeight: '300'
+                  }}>
+                    Cập nhật xu hướng quốc tế, sự kiện thời trang đình đám và tin tức độc quyền từ Vogue.
                   </p>
                 </div>
               </div>
@@ -646,6 +733,12 @@ function App() {
                 </button>
               );
             })}
+            <button
+              className={`filter-tab ${activeCategory === 'NEWS' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('NEWS')}
+            >
+              Tin Tức
+            </button>
           </div>
 
           {/* ADVANCED FILTERS FOR "ALL" CATEGORY */}
@@ -727,71 +820,245 @@ function App() {
             </div>
           )}
 
-          <div className="shop-filters-info">
-            <div className="results-count">
-              Hiển thị {sortedProducts.length} sản phẩm
-            </div>
-            <div className="sustainability-badge">
-              <Info size={12} className="inline-icon" style={{ marginRight: '6px' }} />
-              Chất liệu bền vững 100% tự nhiên
-            </div>
-          </div>
+          {activeCategory === 'NEWS' ? (
+            <div className="news-feed-container">
+              {loadingNews ? (
+                <div className="news-loading-state" style={{ textAlign: 'center', padding: '100px 0' }}>
+                  <div className="admin-spinner" style={{ margin: '0 auto 20px auto' }}></div>
+                  <p style={{ color: '#999' }}>Đang tải dòng tin thời trang cao cấp...</p>
+                </div>
+              ) : newsError ? (
+                <div className="news-error-state" style={{ textAlign: 'center', padding: '100px 0', color: '#e74c3c' }}>
+                  <p>{newsError}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="news-grid" style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gap: '30px',
+                    marginTop: '40px'
+                  }}>
+                    {currentNewsItems.map((item, idx) => (
+                      <motion.div
+                        key={idx}
+                        className="news-card"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: idx * 0.05 }}
+                        style={{
+                          backgroundColor: '#111',
+                          border: '1px solid rgba(189, 163, 128, 0.15)',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                          transition: 'all 0.3s ease',
+                          cursor: 'pointer'
+                        }}
+                        whileHover={{
+                          y: -8,
+                          borderColor: '#d1a852',
+                          boxShadow: '0 12px 40px rgba(209, 168, 82, 0.15)'
+                        }}
+                        onClick={() => window.open(item.link, '_blank')}
+                      >
+                        <div>
+                          <div style={{ height: '220px', overflow: 'hidden', position: 'relative', backgroundColor: '#1c1c1c' }}>
+                            <img
+                              src={item.image || "/images/fashion_coat.png"}
+                              alt={item.title}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+                              onError={(e) => { e.target.src = "/images/fashion_coat.png"; }}
+                            />
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '12px',
+                              left: '12px',
+                              background: 'rgba(10,10,10,0.85)',
+                              padding: '4px 10px',
+                              borderRadius: '4px',
+                              fontSize: '0.7rem',
+                              color: '#d1a852',
+                              border: '1px solid rgba(209, 168, 82, 0.3)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '1px',
+                              fontWeight: '600'
+                            }}>
+                              {item.creator || 'Vogue'}
+                            </div>
+                          </div>
+                          <div style={{ padding: '24px' }}>
+                            <span style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '10px', letterSpacing: '0.5px' }}>
+                              {item.pubDate ? new Date(item.pubDate).toLocaleDateString('vi-VN', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              }) : ''}
+                            </span>
+                            <h3 style={{
+                              fontSize: '1.25rem',
+                              fontWeight: '400',
+                              color: '#fff',
+                              lineHeight: '1.4',
+                              margin: '0 0 12px 0',
+                              fontFamily: 'var(--font-serif, serif)',
+                              display: '-webkit-box',
+                              WebkitLineClamp: '2',
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              letterSpacing: '0.5px'
+                            }}>
+                              {item.title}
+                            </h3>
+                            <p style={{
+                              fontSize: '0.9rem',
+                              color: '#a0a0a0',
+                              lineHeight: '1.6',
+                              margin: 0,
+                              fontWeight: 300,
+                              display: '-webkit-box',
+                              WebkitLineClamp: '3',
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden'
+                            }}>
+                              {item.description}
+                            </p>
+                          </div>
+                        </div>
+                        <div style={{ padding: '0 24px 24px 24px' }}>
+                          <span style={{
+                            fontSize: '0.85rem',
+                            color: '#d1a852',
+                            fontWeight: '600',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'color 0.2s ease'
+                          }}>
+                            Đọc bài viết trên Vogue &rarr;
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
 
-          {sortedProducts.length === 0 ? (
-            <div className="no-products-state">
-              <p>Hiện không có sản phẩm nào thuộc danh mục này.</p>
+                  {/* THANH PHÂN TRANG TIN TỨC */}
+                  {totalNewsPages > 1 && (
+                    <div className="pagination-container" style={{ marginTop: '40px' }}>
+                      <button
+                        className="pagination-btn"
+                        onClick={() => {
+                          setCurrentPage(prev => Math.max(prev - 1, 1));
+                          const grid = document.getElementById('shop-grid');
+                          if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === 1}
+                      >
+                        &lt;
+                      </button>
+
+                      {Array.from({ length: totalNewsPages }, (_, i) => i + 1).map(pageNum => (
+                        <button
+                          key={pageNum}
+                          className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+                          onClick={() => {
+                            setCurrentPage(pageNum);
+                            const grid = document.getElementById('shop-grid');
+                            if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+
+                      <button
+                        className="pagination-btn"
+                        onClick={() => {
+                          setCurrentPage(prev => Math.min(prev + 1, totalNewsPages));
+                          const grid = document.getElementById('shop-grid');
+                          if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === totalNewsPages}
+                      >
+                        &gt;
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           ) : (
             <>
-              <div className="products-grid">
-                <AnimatePresence mode="popLayout">
-                  {currentItems.map(product => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      onOpenDetails={openProductDetails}
-                      onAddToCart={addToCart}
-                      isFavorite={favorites.includes(product.id)}
-                      onToggleFavorite={toggleFavorite}
-                      onSelectCategory={setActiveCategory}
-                    />
-                  ))}
-                </AnimatePresence>
+              <div className="shop-filters-info">
+                <div className="results-count">
+                  Hiển thị {sortedProducts.length} sản phẩm
+                </div>
+                <div className="sustainability-badge">
+                  <Info size={12} className="inline-icon" style={{ marginRight: '6px' }} />
+                  Chất liệu bền vững 100% tự nhiên
+                </div>
               </div>
 
-              {/* THANH PHÂN TRANG */}
-              {totalPages > 1 && (
-                <div className="pagination-container">
-                  <button
-                    className="pagination-btn"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    &lt;
-                  </button>
-
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
-                    <button
-                      key={pageNum}
-                      className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
-                      onClick={() => {
-                        setCurrentPage(pageNum);
-                        const grid = document.getElementById('shop-grid');
-                        if (grid) grid.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
-
-                  <button
-                    className="pagination-btn"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    &gt;
-                  </button>
+              {sortedProducts.length === 0 ? (
+                <div className="no-products-state">
+                  <p>Hiện không có sản phẩm nào thuộc danh mục này.</p>
                 </div>
+              ) : (
+                <>
+                  <div className="products-grid">
+                    <AnimatePresence mode="popLayout">
+                      {currentItems.map(product => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          onOpenDetails={openProductDetails}
+                          onAddToCart={addToCart}
+                          isFavorite={favorites.includes(product.id)}
+                          onToggleFavorite={toggleFavorite}
+                          onSelectCategory={setActiveCategory}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* THANH PHÂN TRANG */}
+                  {totalPages > 1 && (
+                    <div className="pagination-container">
+                      <button
+                        className="pagination-btn"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                      >
+                        &lt;
+                      </button>
+
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                        <button
+                          key={pageNum}
+                          className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+                          onClick={() => {
+                            setCurrentPage(pageNum);
+                            const grid = document.getElementById('shop-grid');
+                            if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+
+                      <button
+                        className="pagination-btn"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                      >
+                        &gt;
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
