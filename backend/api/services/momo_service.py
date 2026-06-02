@@ -27,14 +27,12 @@ class MomoService:
         Gửi yêu cầu thanh toán tới cổng MoMo Sandbox.
         """
         amount = str(int(order.total_price))
-        # Tạo orderId duy nhất bằng cách đính kèm timestamp để tránh trùng lặp khi thanh toán lại
         order_id = f"TK_ORDER_{order.id}_{int(time.time())}"
         request_id = order_id
         order_info = f"Thanh toan don hang #{order.id} tai The K Luxury"
         request_type = "payWithMethod"
         extra_data = ""
 
-        # Chuỗi chữ ký thô theo thứ tự bảng chữ cái của các tham số
         raw_signature = (
             f"accessKey={cls.ACCESS_KEY}&"
             f"amount={amount}&"
@@ -68,7 +66,6 @@ class MomoService:
             "signature": signature
         }
 
-        # Gửi request lên cổng MoMo bằng thư viện urllib.request của python core
         req_body = json.dumps(payload).encode('utf-8')
         req = urllib.request.Request(
             cls.MOMO_API_URL,
@@ -100,38 +97,28 @@ class MomoService:
 
     @classmethod
     def verify_callback_signature(cls, data):
-        """
-        Xác minh chữ ký phản hồi (IPN hoặc Redirect) từ MoMo.
-        Trả về: (is_valid, debug_info)
-        """
         received_signature = data.get('signature')
         if not received_signature:
             return False, {"error": "Missing signature", "received_signature": "", "calculated_signature": "", "raw_signature": ""}
 
-        # Các trường hợp lệ có thể tham gia vào chữ ký của MoMo
         MOMO_KEYS = {
             'partnerCode', 'orderId', 'requestId', 'amount', 'orderInfo',
             'orderType', 'transId', 'resultCode', 'message', 'payType',
             'responseTime', 'extraData', 'accessKey', 'errorCode', 'localMessage'
         }
 
-        # Lọc các trường của MoMo nhận được (loại trừ signature)
         sig_data = {k: v for k, v in data.items() if k in MOMO_KEYS and k != 'signature'}
         
-        # Đảm bảo accessKey có mặt (MoMo không trả về accessKey trên redirect URL)
         sig_data['accessKey'] = cls.ACCESS_KEY
 
-        # Chuẩn hóa giá trị: chuyển đổi None thành chuỗi rỗng và tất cả thành string
         for k in sig_data:
             if sig_data[k] is None:
                 sig_data[k] = ""
             else:
                 sig_data[k] = str(sig_data[k])
 
-        # Sắp xếp các khóa alphabetically A-Z
         sorted_keys = sorted(sig_data.keys())
 
-        # Tạo chuỗi ký tự thô để ký
         raw_parts = []
         for key in sorted_keys:
             raw_parts.append(f"{key}={sig_data[key]}")

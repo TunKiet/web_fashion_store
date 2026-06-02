@@ -9,7 +9,6 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
 
     def get_permissions(self):
-        # Cho phép các endpoint verify MoMo không cần Token Auth (chữ ký được xác thực riêng tư bằng Secret Key)
         if self.action in ['verify_momo', 'momo_ipn']:
             return [AllowAny()]
         permission_classes = [IsAuthenticated]
@@ -75,7 +74,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         return self.update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        # Chỉ Admin/Staff mới được xóa đơn hàng
         if not request.user.is_superuser and not request.user.is_staff:
             return Response({"error": "Bạn không có quyền xóa đơn hàng."}, status=status.HTTP_403_FORBIDDEN)
         
