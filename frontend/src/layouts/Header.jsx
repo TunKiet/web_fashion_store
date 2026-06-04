@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Search, User, Heart, X } from 'lucide-react';
+import { ShoppingBag, Search, User, Heart, X, Sparkles } from 'lucide-react';
+import { getAiRecommendations } from '../services/api';
 
 function Header({
   activeCategory,
@@ -16,10 +17,17 @@ function Header({
   setSearchQuery,
   onOpenAdmin,
   categories = [],
-  onOpenProfile
+  onOpenProfile,
+  onOpenDetails,
+  onAddToCart
 }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef(null);
+
+  const [aiRecommendations, setAiRecommendations] = useState([]);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [hasSearchedAi, setHasSearchedAi] = useState(false);
 
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
@@ -30,6 +38,11 @@ function Header({
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearchQuery(val);
+    if (!val.trim()) {
+      setAiRecommendations([]);
+      setHasSearchedAi(false);
+      setAiError('');
+    }
 
     const grid = document.getElementById('shop-grid');
     if (grid) {
@@ -40,6 +53,39 @@ function Header({
   const handleCloseSearch = () => {
     setIsSearchOpen(false);
     setSearchQuery('');
+    setAiRecommendations([]);
+    setIsAiLoading(false);
+    setAiError('');
+    setHasSearchedAi(false);
+  };
+
+  const handleAiSuggest = async () => {
+    const query = searchQuery.trim();
+    if (!query) {
+      setAiError('Vui lòng nhập phong cách hoặc mô tả sản phẩm bạn cần tìm.');
+      setAiRecommendations([]);
+      setHasSearchedAi(true);
+      return;
+    }
+    
+    setIsAiLoading(true);
+    setAiError('');
+    setAiRecommendations([]);
+    setHasSearchedAi(true);
+
+    try {
+      const response = await getAiRecommendations(query);
+      if (response.data && response.data.recommendations) {
+        setAiRecommendations(response.data.recommendations);
+      } else {
+        setAiRecommendations([]);
+      }
+    } catch (err) {
+      console.error("Lỗi khi lấy gợi ý từ AI:", err);
+      setAiError('Không thể lấy gợi ý lúc này. Vui lòng kiểm tra lại kết nối mạng hoặc OpenAI API Key.');
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   return (
@@ -261,7 +307,7 @@ function Header({
               transition={{ duration: 0.2, ease: "easeOut" }}
               className="header-search-overlay"
             >
-              <div className="search-bar-inner">
+              <div className="search-bar-inner" style={{ position: 'relative' }}>
                 <Search size={18} className="search-bar-icon" />
                 <input
                   ref={searchInputRef}
@@ -271,9 +317,91 @@ function Header({
                   value={searchQuery}
                   onChange={handleSearchChange}
                 />
+                <button 
+                  className="ai-suggest-btn" 
+                  onClick={handleAiSuggest}
+                  disabled={isAiLoading}
+                  type="button"
+                  title="AI gợi ý sản phẩm"
+                >
+                  <Sparkles size={14} className="sparkle-icon" />
+                  <span>Gợi ý AI</span>
+                </button>
                 <button className="icon-btn search-close-btn" onClick={handleCloseSearch} aria-label="Đóng tìm kiếm">
                   <X size={18} />
                 </button>
+
+                {/* AI dropdown results */}
+                {hasSearchedAi && (
+                  <div className="search-dropdown-results">
+                    {isAiLoading ? (
+                      <div className="search-ai-loading">
+                        <div className="spinner"></div>
+                        <p>Trợ lý AI đang tuyển chọn thiết kế cao cấp cho quý khách...</p>
+                      </div>
+                    ) : aiError ? (
+                      <div className="search-ai-error">
+                        <p>{aiError}</p>
+                      </div>
+                    ) : aiRecommendations.length === 0 ? (
+                      <div className="search-ai-empty">
+                        <p>Không tìm thấy thiết kế nào phù hợp. Quý khách vui lòng thử mô tả khác.</p>
+                      </div>
+                    ) : (
+                      <div className="search-ai-recommendations-list">
+                        <h4 className="search-ai-title">Gợi ý từ trợ lý thời trang AI</h4>
+                        <div className="ai-items-grid">
+                          {aiRecommendations.map((item) => {
+                            const imgUrl = item.image_url 
+                              ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:8000${item.image_url}`)
+                              : '/images/fashion_dress.png';
+                            return (
+                              <div key={item.id} className="ai-item-row">
+                                <img 
+                                  src={imgUrl} 
+                                  alt={item.title} 
+                                  className="ai-item-img"
+                                />
+                                <div className="ai-item-details">
+                                  <span className="ai-item-cat">{item.category}</span>
+                                  <h5 className="ai-item-name">{item.title}</h5>
+                                  <span className="ai-item-price">
+                                    {parseFloat(item.price).toLocaleString('vi-VN')} đ
+                                  </span>
+                                  {item.recommendation_reason && (
+                                    <p className="ai-item-reason">
+                                      <Sparkles size={10} className="reason-sparkle" />
+                                      <span>{item.recommendation_reason}</span>
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="ai-item-actions">
+                                  <button 
+                                    className="ai-action-btn view-detail"
+                                    onClick={() => {
+                                      onOpenDetails(item);
+                                      handleCloseSearch();
+                                    }}
+                                  >
+                                    Chi tiết
+                                  </button>
+                                  <button 
+                                    className="ai-action-btn add-to-cart"
+                                    onClick={() => {
+                                      onAddToCart(item);
+                                    }}
+                                  >
+                                    Thêm vào giỏ
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

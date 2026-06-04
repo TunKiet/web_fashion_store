@@ -88,5 +88,6 @@ export const createVoucher = (data) => api.post('/vouchers/', data);
 export const updateVoucher = (id, data) => api.put(`/vouchers/${id}/`, data);
 export const deleteVoucher = (id) => api.delete(`/vouchers/${id}/`);
 export const getFashionNews = () => api.get('/news/');
+export const getAiRecommendations = (query) => api.post('/items/ai-suggest/', { query });
 
 export default api;

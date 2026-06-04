@@ -557,6 +557,8 @@ function App() {
         favoriteCount={favorites.length}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onOpenDetails={openProductDetails}
+        onAddToCart={addToCart}
       />
 
       {/* HERO BANNER OR CATEGORY BANNER SECTION */}

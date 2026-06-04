@@ -55,6 +55,35 @@ class ItemViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK
         )
 
+    @action(detail=False, methods=['post'], url_path='ai-suggest', permission_classes=[AllowAny])
+    def ai_suggest(self, request):
+        """Gợi ý sản phẩm sử dụng AI dựa trên truy vấn của khách hàng"""
+        query = request.data.get('query', '').strip()
+        if not query:
+            return Response({"error": "Vui lòng cung cấp từ khóa gợi ý."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        items = Item.objects.filter(is_deleted=False)
+        from api.services.ai_service import AIService
+        recommendations = AIService.get_product_recommendations(query, items)
+        
+        if not recommendations:
+            return Response({"recommendations": []}, status=status.HTTP_200_OK)
+            
+        recommended_ids = [rec.get('id') for rec in recommendations if rec.get('id')]
+        items_db = {item.id: item for item in Item.objects.filter(id__in=recommended_ids, is_deleted=False)}
+        
+        result = []
+        for rec in recommendations:
+            item_id = rec.get('id')
+            reason = rec.get('reason', '')
+            if item_id in items_db:
+                serializer = self.get_serializer(items_db[item_id])
+                item_data = serializer.data
+                item_data['recommendation_reason'] = reason
+                result.append(item_data)
+                
+        return Response({"recommendations": result}, status=status.HTTP_200_OK)
+
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def upload_image(request):
