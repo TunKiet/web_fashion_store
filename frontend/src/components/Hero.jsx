@@ -1,101 +1,152 @@
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowDown } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 
 function Hero() {
   const containerVariants = {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.25,
-        delayChildren: 0.2
+        staggerChildren: 0.15,
+        delayChildren: 0.1
       }
     }
   };
 
-  const itemVariants = {
-    hidden: { y: '100%', opacity: 0 },
+  const textVariants = {
+    hidden: { y: 30, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
       transition: {
-        duration: 1.6,
+        duration: 1.2,
         ease: [0.16, 1, 0.3, 1]
       }
     }
   };
 
   return (
-    <section className="hero-section">
-      <div className="hero-bg-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
-        <motion.img 
-          initial={{ scale: 1.15, x: 0, y: 0, opacity: 0 }}
-          animate={{ 
-            scale: [1.15, 1.05, 1.12],
-            x: [0, -15, 10],
-            y: [0, -5, -10],
-            opacity: 0.55
-          }}
-          transition={{ 
-            opacity: { duration: 2.2, ease: "easeOut" },
-            scale: { duration: 28, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" },
-            x: { duration: 28, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" },
-            y: { duration: 28, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }
-          }}
-          src="/images/fashion_hero.png" 
-          alt="The K Luxury Editorial Banner" 
-          className="hero-bg-img"
-        />
+    <section className="aura-hero-section">
+      {/* Background Sparkles / Particles */}
+      <div className="hero-sparkles-container">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="hero-sparkle-dot"
+            style={{
+              top: `${Math.random() * 80}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 5}s`,
+              transform: `scale(${Math.random() * 0.8 + 0.2})`
+            }}
+          />
+        ))}
       </div>
-      
-      <div className="hero-overlay"></div>
-      <div className="container" style={{ position: 'relative', zIndex: 3 }}>
-        <motion.div 
+
+      <div className="container hero-inner-grid">
+        {/* Left Content */}
+        <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="hero-content"
+          className="hero-left-col"
         >
-          <div style={{ overflow: 'hidden', paddingBottom: '4px' }}>
-            <motion.div variants={itemVariants} className="hero-subtitle">
-              <Sparkles size={11} className="inline-icon" style={{ marginRight: '6px', verticalAlign: 'middle', marginTop: '-3px' }} />
-              The K Luxury — BST Thu/Đông 2026
-            </motion.div>
-          </div>
-          
-          <div style={{ overflow: 'hidden', paddingBottom: '6px' }}>
-            <motion.h1 
-              variants={itemVariants}
-              className="hero-title"
-            >
-              Sự Sang Trọng <br />Vượt Thời Gian.
-            </motion.h1>
-          </div>
-
-          <div style={{ overflow: 'hidden', paddingBottom: '6px' }}>
-            <motion.p 
-              variants={itemVariants}
-              className="hero-desc"
-            >
-              Khám phá bộ sưu tập giới hạn được chế tác thủ công tinh xảo bởi các nghệ nhân từ chất liệu thượng hạng bậc nhất: lụa tơ tằm dâu, cashmere hai mặt tự nhiên và da bê nguyên tấm siêu mềm mịn.
-            </motion.p>
-          </div>
-
-          <div style={{ overflow: 'hidden', paddingTop: '4px' }}>
-            <motion.button 
-              variants={itemVariants}
-              whileHover={{ scale: 1.03, letterSpacing: '3px' }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="gold-btn" 
-              onClick={() => {
-                const el = document.getElementById('shop-grid');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              Xem Lookbook <ArrowDown size={12} style={{ marginLeft: '8px', verticalAlign: 'middle' }} />
-            </motion.button>
-          </div>
+          <motion.div variants={textVariants} className="hero-collection-tag">
+            <Sparkles size={10} className="gold-sparkle" />
+            <span>EXQUISITE EDITORIAL</span>
+          </motion.div>
+          <motion.h1 variants={textVariants} className="hero-main-title">
+            THE NOCTURNAL<br />COLLECTION
+          </motion.h1>
+          <motion.p variants={textVariants} className="hero-main-desc">
+            Explore the allure of Parisian night
+          </motion.p>
+          <motion.button
+            variants={textVariants}
+            className="hero-explore-btn"
+            onClick={() => {
+              const el = document.getElementById('shop-grid');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            <span>DISCOVER NOW</span>
+            <ArrowRight size={12} />
+          </motion.button>
         </motion.div>
+
+        {/* Center: Model on Glowing Platform */}
+        <div className="hero-center-col">
+          <div className="platform-container">
+            {/* Glowing square platform */}
+            <div className="glowing-platform-base"></div>
+            <div className="glowing-platform-light"></div>
+            
+            {/* Model image */}
+            <motion.img
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
+              src="/images/aura_hero_model.png"
+              alt="Nocturnal Collection Model"
+              className="hero-model-img"
+            />
+          </div>
+
+          {/* Bottom Previews Row */}
+          <div className="hero-bottom-previews">
+            {[
+              "/images/aura_sac_noir.png",
+              "/images/aura_hero_model.png",
+              "/images/aura_nocturnal_clutch.png",
+              "/images/aura_aurora_pumps.png"
+            ].map((img, idx) => (
+              <div key={idx} className="preview-mini-card">
+                <img src={img} alt={`Preview ${idx + 1}`} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Content: Overlapping Cards */}
+        <div className="hero-right-col">
+          {/* Card 1: Le Sac Noir */}
+          <motion.div
+            initial={{ opacity: 0, x: 40, y: -20 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+            className="hero-overlay-card card-sac-noir"
+            whileHover={{ y: -5, transition: { duration: 0.3 } }}
+          >
+            <img src="/images/aura_sac_noir.png" alt="Le Sac Noir" className="card-item-img" />
+            <div className="card-item-info">
+              <span className="card-item-title">LE SAC NOIR</span>
+            </div>
+          </motion.div>
+
+          {/* Curved Draw Arrow SVG */}
+          <svg className="curved-arrow-svg" width="60" height="60" viewBox="0 0 60 60" fill="none">
+            <path
+              d="M10,10 Q35,5 45,35 M45,35 L40,28 M45,35 L38,36"
+              stroke="#bda380"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+
+          {/* Card 2: Luna Earrings */}
+          <motion.div
+            initial={{ opacity: 0, x: 30, y: 50 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
+            className="hero-overlay-card card-luna-earrings"
+            whileHover={{ y: -5, transition: { duration: 0.3 } }}
+          >
+            <img src="/images/aura_luna_earrings.png" alt="Luna Earrings" className="card-item-img" />
+            <div className="card-item-info">
+              <span className="card-item-title">LUNA EARRINGS</span>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

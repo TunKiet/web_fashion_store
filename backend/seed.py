@@ -11,58 +11,58 @@ Item.objects.all().delete()
 
 items = [
     {
-        "title": "Đầm Dạ Hội Lụa Draping Cao Cấp",
-        "description": "Chiếc đầm dạ hội sang trọng được cắt may từ lụa tơ tằm dâu cao cấp, nổi bật với phần cổ xếp nếp rủ (draping) quyến rũ và dáng váy thướt tha, uyển chuyển theo từng bước chuyển động.",
-        "price": 31500000.00,
-        "image_url": "/images/fashion_dress.png",
+        "title": "THE NOCTURNAL GOWN",
+        "description": "Chiếc đầm dạ hội Haute Couture được cắt may từ lụa tơ tằm dâu cao cấp, nổi bật với thiết kế draping xếp nếp tinh xảo, mang phong vị huyền biến của đêm Paris.",
+        "price": 95000000.00,
+        "image_url": "/images/aura_hero_model.png",
         "category": "Đầm dạ hội",
         "is_featured": True
     },
     {
-        "title": "Áo Măng Tô Cashmere Khuy Đúp",
-        "description": "Được chế tác từ sợi len hỗn hợp cashmere hai mặt thượng hạng, chiếc áo măng tô phom dáng khuy đúp (double-breasted) cổ điển này mang lại sự ấm áp tối đa cùng cấu trúc đứng phom thời thượng.",
-        "price": 47250000.00,
-        "image_url": "/images/fashion_coat.png",
-        "category": "Áo khoác",
+        "title": "LE SAC NOIR",
+        "description": "Túi xách da bê nguyên tấm sang quý nhất của AURA, khóa mạ vàng gold 18K tinh xảo và đường may chìm sang trọng được thực hiện hoàn toàn thủ công.",
+        "price": 85000000.00,
+        "image_url": "/images/aura_sac_noir.png",
+        "category": "Túi xách",
         "is_featured": True
     },
     {
-        "title": "Túi Da Đeo Vai Tối Giản",
-        "description": "Túi đeo vai tối giản làm từ chất liệu da bò nguyên tấm (full-grain calf leather) tuyển chọn. Thiết kế tinh tế với đường nét gọn gàng, khóa mạ vàng gold sang trọng và dây đeo tùy chỉnh.",
-        "price": 23750000.00,
-        "image_url": "/images/fashion_bag.png",
-        "category": "Phụ kiện",
+        "title": "LUNA EARRINGS",
+        "description": "Khuyên tai vàng thiết kế vòng cung kép uốn lượn, chế tác từ vàng nguyên khối 18K đem lại vẻ sang trọng kiêu kỳ và thu hút mọi ánh nhìn.",
+        "price": 25000000.00,
+        "image_url": "/images/aura_luna_earrings.png",
+        "category": "Trang sức",
         "is_featured": True
     },
     {
-        "title": "Áo Blazer Linen May Đo Cổ Điển",
-        "description": "Chiếc áo blazer một khuy đa năng dệt từ sợi linen cao cấp của Ý. Thiết kế phom dáng thoải mái nhưng vẫn lịch lãm và chỉn chu, hoàn hảo cho những ngày hè sang trọng.",
-        "price": 18000000.00,
-        "image_url": "/images/fashion_dress.png",
-        "category": "Áo khoác",
+        "title": "THE NOCTURNAL CLUTCH",
+        "description": "Ví cầm tay envelope chế tác từ da trăn đỏ nhập khẩu cao cấp, thiết kế mỏng nhẹ tinh xảo cùng khóa cài khắc logo AURA sắc nét.",
+        "price": 42000000.00,
+        "image_url": "/images/aura_nocturnal_clutch.png",
+        "category": "Túi xách",
+        "is_featured": True
+    },
+    {
+        "title": "THE AURORA PUMPS",
+        "description": "Đôi stiletto cao gót da bê dập vân sắc sảo, phom dáng kiêu kỳ và gót nhọn thanh thoát giúp tôn vinh sải bước quyền lực quý phái.",
+        "price": 38000000.00,
+        "image_url": "/images/aura_aurora_pumps.png",
+        "category": "Giày",
+        "is_featured": True
+    },
+    {
+        "title": "THE ATELIER SILK ROBE",
+        "description": "Áo choàng ngủ satin tơ tằm dâu cao cấp, tay áo phối ren Guipure tinh xảo thêu tay đem lại cảm giác êm mềm tối thượng.",
+        "price": 55000000.00,
+        "image_url": "/images/aura_fabric_2.png",
+        "category": "Trang phục ngủ",
         "is_featured": False
     },
     {
-        "title": "Giày Chelsea Da Bò Cổ Điển",
-        "description": "Đôi giày Chelsea được hoàn thiện thủ công tỉ mỉ bằng chất liệu da bò mềm mại và dẻo dai. Đi kèm phần bo chun hai bên hông linh hoạt và đế da nhiều lớp bền bỉ.",
-        "price": 21250000.00,
-        "image_url": "/images/fashion_coat.png",
-        "category": "Phụ kiện",
-        "is_featured": False
-    },
-    {
-        "title": "Áo Khoác Trench Wool Cách Điệu",
-        "description": "Một phiên bản hiện đại từ phom áo khoác dáng dài truyền thống, được may đo trên chất liệu len virgin wool mềm mịn trung tính. Điểm nhấn là thắt lưng bản to và ve áo cứng cáp.",
-        "price": 36250000.00,
-        "image_url": "/images/fashion_coat.png",
-        "category": "Áo khoác",
-        "is_featured": False
-    },
-    {
-        "title": "Áo Khoác Trench Wool Cách Điệu",
-        "description": "Một phiên bản hiện đại từ phom áo khoác dáng dài truyền thống, được may đo trên chất liệu len virgin wool mềm mịn trung tính. Điểm nhấn là thắt lưng bản to và ve áo cứng cáp.",
-        "price": 36250000.00,
-        "image_url": "/images/fashion_coat.png",
+        "title": "THE NOCTURNAL VELVET COAT",
+        "description": "Áo khoác măng tô dáng dài chất liệu nhung tơ tằm mịn màng, lót lụa tơ tằm dệt hoa chìm sang trọng thích hợp cho tiết trời se lạnh.",
+        "price": 68000000.00,
+        "image_url": "/images/aura_fabric_3.png",
         "category": "Áo khoác",
         "is_featured": False
     }

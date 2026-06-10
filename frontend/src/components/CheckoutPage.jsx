@@ -310,7 +310,10 @@ function CheckoutPage({ cart, cartSubtotal, currentUser, onClearCart, onClose })
             <span>Trở về Giỏ hàng</span>
           </button>
           <div className="checkout-logo-wrapper">
-            <img src="/images/the_k_luxury_logo_transparent.png" alt="The K Luxury" className="checkout-logo" />
+            <div className="logo-text-container" style={{ cursor: 'pointer' }} onClick={onClose}>
+              <span className="brand-aura" style={{ fontSize: '20px', letterSpacing: '5px' }}>AURA</span>
+              <span className="brand-paris" style={{ fontSize: '8px', letterSpacing: '3px' }}>PARIS</span>
+            </div>
           </div>
           <div></div>
         </div>

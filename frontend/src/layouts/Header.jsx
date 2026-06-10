@@ -93,103 +93,63 @@ function Header({
       <div className="container header-container" style={{ position: 'relative' }}>
 
         <div 
-          className="logo-img-container" 
+          className="logo-text-container" 
           style={{ visibility: isSearchOpen ? 'hidden' : 'visible', cursor: 'pointer' }}
-          onClick={() => setActiveCategory('ALL')}
+          onClick={() => {
+            setActiveCategory('ALL');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
         >
-          <img src="/images/the_k_luxury_logo_transparent.png" alt="The K Luxury" className="logo-img" />
+          <span className="brand-aura">AURA</span>
+          <span className="brand-paris">PARIS</span>
         </div>
 
-        <nav className="nav-links" style={{ visibility: isSearchOpen ? 'hidden' : 'visible' }}>
+        <nav className="nav-links-capsule" style={{ visibility: isSearchOpen ? 'hidden' : 'visible' }}>
           <button
-            className={`nav-link ${activeCategory === 'ALL' ? 'active' : ''}`}
-            onClick={() => setActiveCategory('ALL')}
-            style={{ position: 'relative' }}
+            className={`nav-link-capsule ${activeCategory === 'ALL' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveCategory('ALL');
+              setTimeout(() => {
+                const el = document.getElementById('shop-grid');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }, 100);
+            }}
           >
-            Bộ Sưu Tập
-            {activeCategory === 'ALL' && (
-              <motion.div
-                layoutId="activeNavLine"
-                className="active-nav-line"
-                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
-              />
-            )}
+            NEW IN
           </button>
 
           <button
-            className={`nav-link ${activeCategory === 'NEWS' ? 'active' : ''}`}
+            className="nav-link-capsule"
+            onClick={() => {
+              const el = document.getElementById('collections-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            COLLECTIONS
+          </button>
+
+          <button
+            className="nav-link-capsule"
+            onClick={() => {
+              const el = document.getElementById('atelier-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            THE ATELIER
+          </button>
+
+          <button
+            className={`nav-link-capsule ${activeCategory === 'NEWS' ? 'active' : ''}`}
             onClick={() => {
               setActiveCategory('NEWS');
-              const grid = document.getElementById('shop-grid');
-              if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+              setTimeout(() => {
+                const el = document.getElementById('shop-grid');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }, 100);
             }}
-            style={{ position: 'relative' }}
           >
-            Tin Tức Thời Trang
-            {activeCategory === 'NEWS' && (
-              <motion.div
-                layoutId="activeNavLine"
-                className="active-nav-line"
-                transition={{ type: 'spring', stiffness: 220, damping: 25 }}
-              />
-            )}
+            JOURNAL
           </button>
-
-          {categories.filter(c => !c.parent).map(parent => {
-            const children = categories.filter(c => c.parent === parent.id);
-            const isParentActive = activeCategory.toLowerCase() === parent.name.toLowerCase() || 
-              children.some(child => activeCategory.toLowerCase() === child.name.toLowerCase());
-            
-            if (children.length > 0) {
-              return (
-                <div key={parent.id} className="nav-item-dropdown-container">
-                  <button
-                    className={`nav-link ${isParentActive ? 'active' : ''}`}
-                    onClick={() => setActiveCategory(parent.name)}
-                    style={{ position: 'relative' }}
-                  >
-                    {parent.name}
-                    {isParentActive && (
-                      <motion.div
-                        layoutId="activeNavLine"
-                        className="active-nav-line"
-                        transition={{ type: 'spring', stiffness: 220, damping: 25 }}
-                      />
-                    )}
-                  </button>
-                  <div className="nav-dropdown-menu">
-                    {children.map(child => (
-                      <button
-                        key={child.id}
-                        className={`dropdown-item-btn ${activeCategory.toLowerCase() === child.name.toLowerCase() ? 'active' : ''}`}
-                        onClick={() => setActiveCategory(child.name)}
-                      >
-                        {child.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <button
-                key={parent.id}
-                className={`nav-link ${activeCategory.toLowerCase() === parent.name.toLowerCase() ? 'active' : ''}`}
-                onClick={() => setActiveCategory(parent.name)}
-                style={{ position: 'relative' }}
-              >
-                {parent.name}
-                {activeCategory.toLowerCase() === parent.name.toLowerCase() && (
-                  <motion.div
-                    layoutId="activeNavLine"
-                    className="active-nav-line"
-                    transition={{ type: 'spring', stiffness: 220, damping: 25 }}
-                  />
-                )}
-              </button>
-            );
-          })}
         </nav>
 
         <div className="header-actions" style={{ visibility: isSearchOpen ? 'hidden' : 'visible' }}>

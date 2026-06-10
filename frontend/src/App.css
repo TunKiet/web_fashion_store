@@ -3189,3 +3189,1898 @@
 .search-dropdown-results::-webkit-scrollbar-thumb:hover {
   background: rgba(189, 163, 128, 0.5);
 }
+
+/* ==========================================
+   AURA PARIS Header & Logo Redesign
+   ========================================== */
+.logo-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  line-height: 1;
+}
+
+.brand-aura {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 7px;
+  color: #ffffff;
+  text-transform: uppercase;
+  margin-right: -7px; /* correct tracking center alignment */
+}
+
+.brand-paris {
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 5px;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  margin-top: 4px;
+  margin-right: -5px;
+}
+
+.nav-links-capsule {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 40px;
+  padding: 4px 6px;
+  gap: 4px;
+  align-items: center;
+}
+
+.nav-link-capsule {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 10px 22px;
+  border-radius: 30px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent;
+  border: none;
+}
+
+.nav-link-capsule:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link-capsule.active {
+  color: #0d0d0d;
+  background: #ffffff;
+  font-weight: 700;
+}
+
+/* Header background override to glassmorphism */
+.site-header {
+  background-color: rgba(10, 10, 10, 0.75) !important;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(189, 163, 128, 0.12) !important;
+}
+
+.site-header .icon-btn {
+  color: #ffffff !important;
+}
+
+.site-header .icon-btn:hover {
+  color: var(--color-gold) !important;
+}
+
+.auth-user-welcome button {
+  color: #ffffff !important;
+}
+.auth-user-welcome button:hover {
+  color: var(--color-gold) !important;
+}
+
+/* ==========================================
+   AURA PARIS Hero Section Redesign
+   ========================================== */
+.aura-hero-section {
+  position: relative;
+  height: 92vh;
+  min-height: 750px;
+  background: radial-gradient(circle at 50% 30%, #171614 0%, #0a0a0a 75%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding-top: 40px;
+}
+
+/* Sparkle Background particles */
+.hero-sparkles-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hero-sparkle-dot {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #fff, 0 0 15px var(--color-gold);
+  opacity: 0;
+  animation: sparkle-float 6s infinite ease-in-out;
+}
+
+@keyframes sparkle-float {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: translateY(-80px) rotate(360deg); opacity: 0; }
+}
+
+.hero-inner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+}
+
+/* Left Column Styling */
+.hero-left-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding-right: 20px;
+}
+
+.hero-collection-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--color-gold);
+  margin-bottom: 20px;
+}
+
+.gold-sparkle {
+  color: var(--color-gold);
+}
+
+.hero-main-title {
+  font-family: var(--font-serif);
+  font-size: 54px;
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: 2px;
+  color: #ffffff;
+  margin-bottom: 25px;
+}
+
+.hero-main-desc {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: #9e9892;
+  font-weight: 300;
+  margin-bottom: 40px;
+  letter-spacing: 0.5px;
+}
+
+.hero-explore-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 36px;
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  transition: all 0.4s ease;
+  cursor: pointer;
+}
+
+.hero-explore-btn:hover {
+  background: #ffffff;
+  color: #0d0d0d;
+  border-color: #ffffff;
+  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Center Column & Platform */
+.hero-center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 100%;
+}
+
+.platform-container {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+}
+
+.glowing-platform-base {
+  position: absolute;
+  bottom: 50px;
+  width: 380px;
+  height: 180px;
+  background: linear-gradient(135deg, #151515 0%, #0d0d0d 100%);
+  border: 2px solid rgba(189, 163, 128, 0.3);
+  transform: rotateX(62deg) rotateZ(-12deg);
+  box-shadow: 
+    0 25px 60px rgba(0, 0, 0, 0.8),
+    inset 0 0 30px rgba(189, 163, 128, 0.1);
+  z-index: 1;
+}
+
+.glowing-platform-light {
+  position: absolute;
+  bottom: 50px;
+  width: 382px;
+  height: 182px;
+  transform: rotateX(62deg) rotateZ(-12deg);
+  box-shadow: 0 0 25px rgba(209, 168, 82, 0.35), 0 0 50px rgba(209, 168, 82, 0.15);
+  border-radius: 4px;
+  z-index: 2;
+  animation: glow-pulse 4s infinite alternate;
+}
+
+@keyframes glow-pulse {
+  0% { opacity: 0.65; box-shadow: 0 0 20px rgba(209, 168, 82, 0.2), 0 0 40px rgba(209, 168, 82, 0.1); }
+  100% { opacity: 1; box-shadow: 0 0 35px rgba(209, 168, 82, 0.45), 0 0 70px rgba(209, 168, 82, 0.25); }
+}
+
+.hero-model-img {
+  position: absolute;
+  bottom: 100px;
+  width: 82%;
+  height: auto;
+  object-fit: contain;
+  z-index: 3;
+  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.5));
+}
+
+.hero-bottom-previews {
+  display: flex;
+  gap: 15px;
+  margin-top: -30px;
+  z-index: 5;
+  justify-content: center;
+}
+
+.preview-mini-card {
+  width: 60px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  opacity: 0.7;
+}
+
+.preview-mini-card:hover {
+  opacity: 1;
+  transform: translateY(-5px);
+  border-color: var(--color-gold);
+  box-shadow: 0 5px 15px rgba(189, 163, 128, 0.2);
+}
+
+.preview-mini-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.8);
+}
+
+/* Right Column & Floating Cards */
+.hero-right-col {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 400px;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-left: 20px;
+}
+
+.hero-overlay-card {
+  width: 150px;
+  background: rgba(25, 25, 25, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 10px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  z-index: 6;
+  text-align: left;
+}
+
+.hero-overlay-card .card-item-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #111;
+}
+
+.hero-overlay-card .card-item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-overlay-card .card-item-title {
+  font-family: var(--font-serif);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.card-sac-noir {
+  transform: rotate(-3deg);
+  animation: float-card-1 5s infinite ease-in-out;
+}
+
+.card-luna-earrings {
+  transform: rotate(3deg);
+  animation: float-card-2 6s infinite ease-in-out;
+}
+
+@keyframes float-card-1 {
+  0% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-12px) rotate(-1deg); }
+  100% { transform: translateY(0) rotate(-3deg); }
+}
+
+@keyframes float-card-2 {
+  0% { transform: translateY(0) rotate(3deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+  100% { transform: translateY(0) rotate(3deg); }
+}
+
+.curved-arrow-svg {
+  position: absolute;
+  top: 150px;
+  right: 120px;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* ==========================================
+   AURA PARIS Collections Section Styles
+   ========================================== */
+.aura-collections-section {
+  padding: 120px 0;
+  background-color: #0d0d0d;
+  border-top: 1px solid rgba(189, 163, 128, 0.12);
+  border-bottom: 1px solid rgba(189, 163, 128, 0.12);
+}
+
+.collections-main-title {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  color: var(--color-gold);
+  margin-bottom: 60px;
+  text-align: center;
+  position: relative;
+}
+
+.collections-main-title::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 1px;
+  background-color: var(--color-gold);
+}
+
+.collections-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.collection-card-large {
+  background: linear-gradient(135deg, #151515 0%, #0d0d0d 100%);
+  border: 1px solid rgba(189, 163, 128, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s ease;
+}
+
+.collection-card-large:hover {
+  border-color: rgba(189, 163, 128, 0.35);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+  transform: translateY(-4px);
+}
+
+.collection-card-large .card-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.15;
+  overflow: hidden;
+  background-color: #111111;
+}
+
+.collection-card-large .collection-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.2s ease;
+}
+
+.collection-card-large:hover .collection-img {
+  transform: scale(1.03);
+}
+
+/* Carousel arrows mockup styling */
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(13, 13, 13, 0.8);
+  border: 1px solid rgba(189, 163, 128, 0.2);
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.carousel-arrow:hover {
+  background: var(--color-gold);
+  color: #0d0d0d;
+  border-color: var(--color-gold);
+}
+
+.carousel-arrow.arrow-left {
+  left: 20px;
+}
+
+.carousel-arrow.arrow-right {
+  right: 20px;
+}
+
+.collection-card-large .card-details {
+  padding: 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.collection-card-large .card-title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: 2px;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.collection-card-large .card-subtitle {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  color: var(--color-gold);
+  text-transform: uppercase;
+}
+
+/* Overlay style details on Pumps Card */
+.collection-card-large.pumps-card {
+  justify-content: flex-end;
+}
+
+.collection-card-large .card-details.overlay-details {
+  padding: 40px;
+  background: linear-gradient(to top, #0d0d0d 60%, rgba(13, 13, 13, 0.8) 85%, transparent 100%);
+  text-align: center;
+  align-items: center;
+}
+
+.collection-card-large .card-description {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: #9e9892;
+  font-weight: 300;
+  line-height: 1.7;
+  max-width: 440px;
+  margin: 10px auto 25px;
+}
+
+.collection-card-large .card-explore-btn {
+  padding: 12px 36px;
+  background: var(--color-gold);
+  color: #0d0d0d;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: 1px solid var(--color-gold);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.collection-card-large .card-explore-btn:hover {
+  background: transparent;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+/* Dash indicator dots */
+.collections-slider-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 40px;
+}
+
+.indicator-dash {
+  width: 32px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.indicator-dash.active,
+.indicator-dash:hover {
+  background: var(--color-gold);
+}
+
+/* ==========================================
+   AURA PARIS Atelier Section Styles
+   ========================================== */
+.aura-atelier-section {
+  padding: 120px 0;
+  background-color: #0a0a0a;
+}
+
+.atelier-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.atelier-title {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.atelier-subtitle {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--color-gold);
+}
+
+.atelier-content-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 50px;
+  align-items: center;
+}
+
+/* Swatches Grid Left Column */
+.atelier-swatches-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.fabric-swatch-card {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(189, 163, 128, 0.12);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s ease;
+  background: #111;
+}
+
+.fabric-swatch-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s ease;
+}
+
+.fabric-swatch-card:hover img {
+  transform: scale(1.05);
+}
+
+.fabric-swatch-card .swatch-label {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  font-family: var(--font-serif);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  z-index: 5;
+}
+
+.fabric-swatch-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(10, 10, 10, 0.5) 0%, transparent 60%);
+  z-index: 2;
+}
+
+.fabric-swatch-card.item-large {
+  height: 420px;
+}
+
+.fabric-swatch-card.item-small {
+  height: 230px;
+}
+
+.swatch-small-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.swatches-row-half {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.fabric-swatch-card.item-mini {
+  height: 170px;
+}
+
+/* Video Player Container Right Column */
+.atelier-video-player-container {
+  width: 100%;
+}
+
+.video-viewport {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background-color: #000000;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(189, 163, 128, 0.15);
+  box-shadow: 0 25px 55px rgba(0, 0, 0, 0.5);
+}
+
+.video-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 15s ease;
+}
+
+.video-playing-zoom {
+  transform: scale(1.08);
+}
+
+.video-player-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(13, 13, 13, 0.2) 0%, rgba(10, 10, 10, 0.55) 100%);
+  z-index: 2;
+}
+
+/* Large Center Play Button */
+.video-play-center-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  z-index: 5;
+  box-shadow: 0 10px 25px rgba(189, 163, 128, 0.4);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.video-play-center-btn:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  background-color: #ffffff;
+  box-shadow: 0 12px 30px rgba(255, 255, 255, 0.5);
+}
+
+.video-play-center-btn.playing {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.8);
+  pointer-events: none;
+}
+
+.video-viewport:hover .video-play-center-btn.playing {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Custom Video Control Bar */
+.video-controls-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(to top, rgba(10, 10, 10, 0.95) 0%, rgba(10, 10, 10, 0.8) 70%, transparent 100%);
+  padding: 15px 25px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 10;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.control-btn {
+  color: #ffffff;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+  cursor: pointer;
+}
+
+.control-btn:hover {
+  opacity: 1;
+  color: var(--color-gold);
+}
+
+.control-btn.mini-play-pause {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.time-display {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.5px;
+  min-width: 65px;
+}
+
+/* Progress Bar Timeline Mock */
+.timeline-track {
+  flex: 1;
+  height: 3px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  position: relative;
+  cursor: pointer;
+}
+
+.timeline-progress-fill {
+  height: 100%;
+  background-color: var(--color-gold);
+  border-radius: 2px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: width 0.3s ease;
+}
+
+.timeline-handle {
+  width: 9px;
+  height: 9px;
+  background-color: #ffffff;
+  border: 2px solid var(--color-gold);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 0.3s ease;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.timeline-track:hover .timeline-handle {
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+.atelier-footer-action {
+  display: flex;
+  justify-content: center;
+  margin-top: 60px;
+}
+
+.our-story-btn {
+  padding: 16px 44px;
+  background: transparent;
+  color: var(--color-gold);
+  border: 1px solid var(--color-gold);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  transition: all 0.4s ease;
+}
+
+.our-story-btn:hover {
+  background: var(--color-gold);
+  color: #0d0d0d;
+  box-shadow: 0 10px 25px rgba(189, 163, 128, 0.25);
+  transform: translateY(-2px);
+}
+
+/* ==========================================
+   Responsive & General Dark Overrides
+   ========================================== */
+.shop-section {
+  background-color: #0d0d0d !important;
+  color: #ffffff;
+}
+
+.section-title {
+  color: #ffffff !important;
+}
+
+.filter-tab {
+  color: #9e9892 !important;
+}
+
+.filter-tab:hover,
+.filter-tab.active {
+  color: #ffffff !important;
+}
+
+.filter-tab::after {
+  background-color: var(--color-gold) !important;
+}
+
+.product-name {
+  color: #ffffff !important;
+}
+
+.product-price-display {
+  color: var(--color-gold) !important;
+}
+
+.advanced-filters-toggle {
+  background-color: #151515 !important;
+  color: #ffffff !important;
+  border-color: rgba(189, 163, 128, 0.15) !important;
+}
+
+.advanced-filters-toggle:hover {
+  border-color: var(--color-gold) !important;
+  color: var(--color-gold) !important;
+}
+
+.advanced-filters-drawer {
+  background-color: #121212 !important;
+  border-color: rgba(189, 163, 128, 0.1) !important;
+}
+
+.filter-price-input {
+  background-color: #1d1d1d !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.filter-sort-select {
+  background-color: #1d1d1d !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.reset-filters-btn {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.reset-filters-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.featured-section {
+  background: linear-gradient(to bottom, #0a0a0a 0%, #0d0d0d 100%) !important;
+}
+
+@media (max-width: 1024px) {
+  .hero-inner-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 40px;
+    padding: 60px 0;
+    text-align: center;
+  }
+  
+  .hero-left-col {
+    align-items: center;
+    text-align: center;
+    padding-right: 0;
+  }
+
+  .hero-right-col {
+    flex-direction: row;
+    height: auto;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+    padding-left: 0;
+  }
+
+  .curved-arrow-svg {
+    display: none;
+  }
+
+  .atelier-content-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .collections-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================
+   AURA PARIS Atelier 6 Swatches Layout Updates
+   ========================================== */
+.atelier-grid-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.atelier-top-row-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.atelier-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.atelier-bottom-left-swatches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.fabric-swatch-card-square {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(189, 163, 128, 0.12);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  aspect-ratio: 1; /* Make swatches square */
+  background: #111;
+  cursor: pointer;
+}
+
+.fabric-swatch-card-square img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s ease;
+}
+
+.fabric-swatch-card-square:hover img {
+  transform: scale(1.05);
+}
+
+.fabric-swatch-card-square .swatch-label {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  font-family: var(--font-serif);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  z-index: 5;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.fabric-swatch-card-square::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(10, 10, 10, 0.6) 0%, transparent 60%);
+  z-index: 2;
+}
+
+/* Responsive Swatches */
+@media (max-width: 900px) {
+  .atelier-top-row-swatches {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .atelier-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================
+   AURA PARIS Journal Component Styles
+   ========================================== */
+.aura-journal-section {
+  padding: 120px 0;
+  background-color: #0d0d0d;
+  border-top: 1px solid rgba(189, 163, 128, 0.12);
+}
+
+.journal-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.journal-title {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  color: var(--color-gold);
+  text-align: center;
+  position: relative;
+}
+
+.journal-title::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 1px;
+  background-color: var(--color-gold);
+}
+
+.journal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-bottom: 50px;
+}
+
+.journal-card {
+  background: linear-gradient(135deg, #151515 0%, #0d0d0d 100%);
+  border: 1px solid rgba(189, 163, 128, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.journal-card:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.journal-card-img-wrapper {
+  width: 100%;
+  aspect-ratio: 16 / 11;
+  overflow: hidden;
+  background-color: #111;
+}
+
+.journal-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1s ease;
+  filter: brightness(0.85);
+}
+
+.journal-card:hover .journal-card-img {
+  transform: scale(1.04);
+}
+
+.journal-card-content {
+  padding: 30px 25px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.journal-card-title {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.journal-card-desc {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: #9e9892;
+  font-weight: 300;
+  line-height: 1.6;
+  margin-bottom: 25px;
+  flex: 1;
+}
+
+.journal-card-date {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-gold);
+  display: flex;
+  align-items: center;
+}
+
+.journal-footer-action {
+  display: flex;
+  justify-content: center;
+}
+
+.journal-story-btn {
+  padding: 16px 44px;
+  background: transparent;
+  color: var(--color-gold);
+  border: 1px solid var(--color-gold);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  transition: all 0.4s ease;
+  cursor: pointer;
+}
+
+.journal-story-btn:hover {
+  background: var(--color-gold);
+  color: #0d0d0d;
+  box-shadow: 0 10px 25px rgba(189, 163, 128, 0.25);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 900px) {
+  .journal-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+}
+
+/* ==========================================
+   AURA PARIS Footer Redesign Styles
+   ========================================== */
+.footer-grid-aura {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr 0.8fr 1.5fr;
+  gap: 40px;
+  text-align: left;
+  margin-bottom: 60px;
+}
+
+.brand-desc-para {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: #9e9892;
+  font-weight: 300;
+  line-height: 1.7;
+  margin-bottom: 25px;
+}
+
+.footer-social-circle-row {
+  display: flex;
+  gap: 12px;
+}
+
+.social-circle-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+}
+
+.social-circle-btn:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  background-color: rgba(189, 163, 128, 0.05);
+}
+
+.footer-menu-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-col-title {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-transform: uppercase;
+  margin-bottom: 25px;
+}
+
+.footer-menu-links {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-menu-links a {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: #9e9892;
+  font-weight: 300;
+  transition: color 0.3s ease;
+}
+
+.footer-menu-links a:hover {
+  color: var(--color-gold);
+}
+
+.footer-locator-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.locator-subtext {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: #9e9892;
+  font-weight: 300;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.email-locator-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 25px;
+}
+
+.email-locator-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: #ffffff;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.email-locator-input:focus {
+  border-color: var(--color-gold);
+}
+
+.email-locator-submit-btn {
+  width: 100%;
+  padding: 12px 0;
+  background-color: var(--color-gold);
+  color: #0d0d0d;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.email-locator-submit-btn:hover {
+  background-color: #ffffff;
+  color: #0d0d0d;
+}
+
+.store-locator-btn {
+  width: 100%;
+  padding: 12px 0;
+  background-color: transparent;
+  color: var(--color-gold);
+  border: 1px solid var(--color-gold);
+  border-radius: 25px; /* Pill design from the sketch */
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.store-locator-btn:hover {
+  background-color: var(--color-gold);
+  color: #0d0d0d;
+  box-shadow: 0 5px 15px rgba(189, 163, 128, 0.2);
+}
+
+.footer-bottom-aura {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.guidelines-links-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.guidelines-links-row a {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: #9e9892;
+  font-weight: 300;
+  transition: color 0.3s ease;
+}
+
+.guidelines-links-row a:hover {
+  color: var(--color-gold);
+}
+
+.guidelines-links-row .separator {
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 10px;
+}
+
+.copyright-aura-text {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: #9e9892;
+  font-weight: 300;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .footer-grid-aura {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  
+  .footer-bottom-aura {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+}
+
+/* ==========================================
+   AURA PARIS Component Subpages Dark overrides
+   ========================================== */
+
+/* 1. Authentication Modal */
+.auth-modal-content {
+  background-color: #121212 !important;
+  border: 1px solid rgba(189, 163, 128, 0.2) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7) !important;
+}
+
+.auth-brand {
+  color: #ffffff !important;
+}
+
+.auth-subtitle {
+  color: #9e9892 !important;
+}
+
+.auth-input-label {
+  color: var(--color-gold) !important;
+}
+
+.auth-input {
+  color: #ffffff !important;
+}
+
+.auth-password-toggle {
+  color: #9e9892 !important;
+}
+
+.auth-password-toggle:hover {
+  color: #ffffff !important;
+}
+
+.auth-submit-btn {
+  background-color: var(--color-gold) !important;
+  color: #0d0d0d !important;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  background-color: #ffffff !important;
+  color: #0d0d0d !important;
+}
+
+.auth-toggle-link {
+  color: var(--color-gold) !important;
+}
+
+.auth-toggle-link:hover {
+  color: #ffffff !important;
+}
+
+/* 2. Product Detail Modal */
+.modal-content-wrapper {
+  background-color: #121212 !important;
+  border: 1px solid rgba(189, 163, 128, 0.18) !important;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.7) !important;
+}
+
+.modal-close-btn {
+  color: #ffffff !important;
+}
+
+.modal-close-btn:hover {
+  color: var(--color-gold) !important;
+}
+
+.modal-title {
+  color: #ffffff !important;
+}
+
+.modal-price-display {
+  color: var(--color-gold) !important;
+}
+
+.modal-desc {
+  color: #9e9892 !important;
+}
+
+.size-header {
+  color: #ffffff !important;
+}
+
+.size-option-btn {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.size-option-btn:hover {
+  border-color: var(--color-gold) !important;
+  color: var(--color-gold) !important;
+}
+
+.size-option-btn.selected {
+  background-color: var(--color-gold) !important;
+  border-color: var(--color-gold) !important;
+  color: #0d0d0d !important;
+  font-weight: 700;
+}
+
+.modal-add-to-cart-btn {
+  background-color: var(--color-gold) !important;
+  color: #0d0d0d !important;
+  font-weight: 700;
+}
+
+.modal-add-to-cart-btn:hover {
+  background-color: #ffffff !important;
+  color: #0d0d0d !important;
+}
+
+.modal-nav-btn {
+  color: #ffffff !important;
+  background-color: rgba(25, 25, 25, 0.6) !important;
+  border: 1px solid rgba(189, 163, 128, 0.2) !important;
+}
+
+.modal-nav-btn:hover {
+  color: #0d0d0d !important;
+  background-color: var(--color-gold) !important;
+}
+
+/* 3. Cart Drawer */
+.cart-drawer {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+  border-left: 1px solid rgba(189, 163, 128, 0.18) !important;
+}
+
+.cart-header {
+  border-bottom-color: rgba(189, 163, 128, 0.15) !important;
+}
+
+.cart-header h2 {
+  color: #ffffff !important;
+}
+
+.close-btn {
+  color: #ffffff !important;
+}
+
+.close-btn:hover {
+  color: var(--color-gold) !important;
+}
+
+.cart-item {
+  border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.cart-item-info h4 {
+  color: #ffffff !important;
+}
+
+.cart-item-info p {
+  color: #9e9892 !important;
+}
+
+.cart-item-price {
+  color: var(--color-gold) !important;
+}
+
+.qty-selector {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.qty-btn {
+  color: #ffffff !important;
+}
+
+.qty-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.remove-item-btn {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.remove-item-btn:hover {
+  color: #d63031 !important;
+}
+
+.cart-footer {
+  background-color: #181818 !important;
+  border-top-color: rgba(189, 163, 128, 0.15) !important;
+}
+
+.cart-subtotal {
+  color: #ffffff !important;
+}
+
+.cart-subtotal span:first-child {
+  color: #9e9892 !important;
+}
+
+.checkout-btn {
+  background-color: var(--color-gold) !important;
+  color: #0d0d0d !important;
+  font-weight: 700;
+}
+
+.checkout-btn:hover {
+  background-color: #ffffff !important;
+  color: #0d0d0d !important;
+}
+
+/* 4. Checkout Page Overrides */
+.checkout-page-overlay {
+  background-color: #0a0a0a !important;
+  color: #ffffff !important;
+}
+
+.checkout-back-link {
+  color: #ffffff !important;
+}
+
+.checkout-back-link:hover {
+  color: var(--color-gold) !important;
+}
+
+.checkout-form-column,
+.checkout-summary-column {
+  background-color: transparent !important;
+}
+
+.checkout-section-block {
+  background-color: #121212 !important;
+  border: 1px solid rgba(189, 163, 128, 0.15) !important;
+}
+
+.checkout-section-title h3 {
+  color: #ffffff !important;
+}
+
+.checkout-section-title .title-icon {
+  color: var(--color-gold) !important;
+}
+
+.checkout-input-group label {
+  color: #9e9892 !important;
+}
+
+.checkout-input-group input,
+.checkout-input-group select,
+.checkout-input-group textarea {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.checkout-input-group input:focus,
+.checkout-input-group select:focus,
+.checkout-input-group textarea:focus {
+  border-color: var(--color-gold) !important;
+}
+
+.checkout-input-group .field-icon {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.payment-method-card {
+  background-color: #1a1a1a !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.payment-method-card:hover {
+  border-color: var(--color-gold) !important;
+}
+
+.payment-method-card.active {
+  background-color: rgba(189, 163, 128, 0.05) !important;
+  border-color: var(--color-gold) !important;
+}
+
+.payment-method-card.active .method-name {
+  color: var(--color-gold) !important;
+}
+
+.card-details-fields {
+  background-color: #181818 !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.checkout-submit-btn {
+  background-color: var(--color-gold) !important;
+  color: #0d0d0d !important;
+  font-weight: 700 !important;
+}
+
+.checkout-submit-btn:hover {
+  background-color: #ffffff !important;
+  color: #0d0d0d !important;
+}
+
+.summary-sticky-card {
+  background-color: #121212 !important;
+  border: 1px solid rgba(189, 163, 128, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.summary-title {
+  color: #ffffff !important;
+}
+
+.summary-item-row h4 {
+  color: #ffffff !important;
+}
+
+.summary-item-row span {
+  color: #9e9892 !important;
+}
+
+.summary-item-price {
+  color: var(--color-gold) !important;
+}
+
+.totals-row {
+  color: #ffffff !important;
+}
+
+.totals-row span:first-child {
+  color: #9e9892 !important;
+}
+
+.totals-row.grand-total {
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.totals-row.grand-total span:last-child {
+  color: var(--color-gold) !important;
+}
+
+.checkout-voucher-section form input {
+  background-color: #1a1a1a !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+/* 5. User Profile Overrides */
+.user-profile-overlay {
+  background-color: rgba(10, 10, 10, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.profile-card {
+  background-color: var(--color-bg-soft) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7) !important;
+}
+
+.profile-card-header {
+  background-color: var(--color-bg-cream) !important;
+  border-bottom-color: var(--color-border) !important;
+}
+
+.profile-left-column {
+  background-color: rgba(10, 10, 10, 0.5) !important;
+  border-right-color: var(--color-border) !important;
+}
+
+.profile-user-name {
+  color: #ffffff !important;
+}
+
+.loyalty-points-box {
+  background-color: var(--color-bg-cream) !important;
+  border-color: var(--color-border) !important;
+}
+
+.points-value {
+  color: var(--color-gold) !important;
+}
+
+.stat-box {
+  background-color: var(--color-bg-cream) !important;
+  border-color: var(--color-border) !important;
+}
+
+.stat-num {
+  color: #ffffff !important;
+}
+
+.profile-section-title h3 {
+  color: #ffffff !important;
+}
+
+.info-field-item {
+  background-color: var(--color-bg-cream) !important;
+  border-color: var(--color-border) !important;
+}
+
+.field-value {
+  color: #ffffff !important;
+}
+
+.orders-table-wrapper {
+  background-color: var(--color-bg-cream) !important;
+  border-color: var(--color-border) !important;
+}
+
+.orders-table th {
+  background-color: rgba(10, 10, 10, 0.3) !important;
+  border-bottom-color: var(--color-border) !important;
+  color: var(--color-text-muted) !important;
+}
+
+.orders-table td {
+  border-bottom-color: var(--color-border) !important;
+  color: #ffffff !important;
+}
+
+.settings-item-box {
+  background-color: var(--color-bg-cream) !important;
+  border-color: var(--color-border) !important;
+}
+
+.profile-actions-footer button.profile-action-btn {
+  background-color: transparent !important;
+  border: 1px solid var(--color-border) !important;
+  color: #ffffff !important;
+}
+
+.profile-actions-footer button.profile-action-btn:hover {
+  border-color: var(--color-gold) !important;
+  color: var(--color-gold) !important;
+  background-color: rgba(189, 163, 128, 0.05) !important;
+}
+
+.profile-actions-footer button.logout-btn-action {
+  border-color: rgba(231, 76, 60, 0.3) !important;
+  color: #e74c3c !important;
+}
+
+.profile-actions-footer button.logout-btn-action:hover {
+  background-color: rgba(231, 76, 60, 0.05) !important;
+  border-color: #e74c3c !important;
+  color: #e74c3c !important;
+}
+
+/* Edit profile form labels and cancel button */
+.edit-profile-form label {
+  color: var(--color-text-muted) !important;
+}
+
+.cancel-edit-btn {
+  border-color: var(--color-border) !important;
+  color: #ffffff !important;
+}
+
+.cancel-edit-btn:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  color: #ffffff !important;
+}
